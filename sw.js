@@ -1,4 +1,4 @@
-const V='me-v2',STATIC=V+'-static',TILES=V+'-tiles',DATA=V+'-data';
+const V='me-v3',STATIC=V+'-static',TILES=V+'-tiles',DATA=V+'-data';
 const SHELL=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png'];
 const CDN=['https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js','https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css'];
 self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(STATIC);await Promise.allSettled([...SHELL.map(u=>c.add(new Request(u,{cache:'reload'}))),...CDN.map(u=>c.add(u))]);await self.skipWaiting()})()));
