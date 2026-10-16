@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1d26">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gulf Ships">
+<title>Gulf Ships</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+:root{--bg:#0b1d26;--panel:#10272f;--raise:#18343e;--line:#25434e;--ink:#e7f0f2;--mute:#8ea9b2;--cargo:#4cc6dc;--tank:#f2a640;--other:#9fb0b6;--ok:#52d19c;--warn:#f2a640;--bad:#ff6b5e;--hh:120px;color-scheme:dark}
+@media(prefers-color-scheme:light){:root{--bg:#e3ebee;--panel:#f5f8f9;--raise:#fff;--line:#c4d3d9;--ink:#0e2530;--mute:#53707a;--cargo:#0a89a2;--tank:#bf6a00;--other:#6c7f86;--ok:#14935f;--warn:#b86a00;--bad:#d03a2c;color-scheme:light}}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font:15px/1.35 Archivo,system-ui,sans-serif;-webkit-text-size-adjust:100%;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+#map{position:fixed;inset:0}
+.top{position:fixed;left:0;right:0;top:0;z-index:5;display:grid;gap:8px;padding:max(10px,env(safe-area-inset-top)) 12px 10px;background:linear-gradient(color-mix(in srgb,var(--bg) 88%,transparent),transparent)}
+.search{display:flex;align-items:center;gap:10px;height:46px;padding:0 8px 0 14px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 24px #0005}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;color:inherit;font:inherit;font-size:16px}
+.search input::placeholder{color:var(--mute)}
+.stat{display:flex;align-items:center;gap:6px;flex:none;padding:5px 9px;border-radius:9px;background:var(--raise);font-size:12px;font-weight:600;color:var(--mute)}
+.stat i{width:8px;height:8px;border-radius:50%;background:var(--other)}
+.stat.ok i{background:var(--ok)}.stat.warn i{background:var(--warn)}.stat.bad i{background:var(--bad)}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);color:var(--mute);font-weight:600;font-stretch:92%}
+.chip.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chip i{width:8px;height:8px;border-radius:50%}
+#list{position:fixed;left:0;right:0;bottom:0;top:var(--hh);z-index:4;overflow:auto;overscroll-behavior:contain;background:var(--panel);border-radius:18px 18px 0 0;padding-bottom:calc(86px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+body.v-list #list{transform:none}
+.row{display:grid;grid-template-columns:12px 1fr auto;column-gap:12px;row-gap:3px;width:100%;padding:13px 16px;text-align:left;border-bottom:1px solid var(--line)}
+.row:active,.row.sel{background:var(--raise)}
+.row .dot{grid-row:1/3;align-self:start;margin-top:7px;width:10px;height:10px;border-radius:50%}
+.nm{font-stretch:72%;font-weight:700;font-size:18px;letter-spacing:.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt{text-align:right;font-weight:600;font-size:13px}
+.sub{display:flex;gap:12px;color:var(--mute);font-size:13px;min-width:0}
+.sub span{white-space:nowrap}
+.ag{text-align:right;color:var(--mute);font-size:12px}
+.dst{grid-column:2/4;color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note,.empty{padding:18px 16px;color:var(--mute);font-size:14px}
+.empty b,.note b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+.note{border-bottom:1px solid var(--line);color:var(--warn)}
+.fine{padding:16px;color:var(--mute);font-size:12px;max-width:60ch}
+nav{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:7;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 28px #0006}
+nav button{padding:11px;border-radius:12px;font-weight:700;color:var(--mute)}
+nav button.on{background:var(--raise);color:var(--ink)}
+nav small{font-weight:600;color:var(--mute);margin-left:6px}
+#sheet{position:fixed;left:12px;right:12px;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 62px);z-index:6;max-height:62dvh;overflow:auto;padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 40px #0008;transform:translateY(140%);transition:transform .28s cubic-bezier(.2,.8,.2,1)}
+#sheet.open{transform:none}
+.hd{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.hd h2{font-stretch:70%;font-weight:750;font-size:26px;line-height:1.05;letter-spacing:.01em}
+.hd p{color:var(--mute);margin-top:4px}
+.x{flex:none;width:34px;height:34px;border-radius:50%;background:var(--raise);font-size:18px;line-height:1}
+.pass{display:grid;grid-template-columns:1fr 56px 1fr;gap:10px;align-items:start;margin:18px 0 14px}
+.pass b{display:block;font-size:15px;font-weight:700}
+.pass small{display:block;color:var(--mute);font-size:12px;margin-top:2px}
+.pass .r{text-align:right}
+.rail{position:relative;height:2px;margin-top:9px;background:repeating-linear-gradient(90deg,var(--mute) 0 4px,#0000 4px 8px)}
+.rail i{position:absolute;top:-4px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--tc)}
+dl{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 16px;margin:14px 0;font-variant-numeric:tabular-nums}
+dt{color:var(--mute);font-size:12px}
+dd{font-weight:600}
+.cg{padding-top:12px;border-top:1px solid var(--line);color:var(--mute);font-size:13px}
+.cg b{color:var(--ink)}
+.pt{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ink);text-shadow:0 0 3px var(--bg),0 0 3px var(--bg)}
+.pt i{width:7px;height:7px;transform:rotate(45deg);background:var(--ink);border:1.5px solid var(--bg)}
+body.far .pt span{display:none}
+.maplibregl-ctrl-bottom-right{bottom:calc(150px + env(safe-area-inset-bottom))}
+@media(min-width:900px){
+ #map{left:400px}
+ .top{right:auto;width:400px;background:var(--panel);border-right:1px solid var(--line)}
+ #list{right:auto;width:400px;transform:none;border-radius:0;border-right:1px solid var(--line);padding-bottom:20px}
+ nav{display:none}
+ #sheet{left:416px;right:auto;width:380px;bottom:16px}
+ .maplibregl-ctrl-bottom-right{bottom:0}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body class="v-list">
+<div id="map"></div>
+<header class="top">
+ <label class="search"><input id="q" type="search" placeholder="Search name, IMO, MMSI, port or flag" autocomplete="off" autocapitalize="off" enterkeyhint="search" aria-label="Search ships"><span class="stat" id="stat"><i></i><b>Loading</b></span></label>
+ <div class="chips" id="chips">
+  <button class="chip on" data-f="all">All</button>
+  <button class="chip" data-f="cargo"><i style="background:var(--cargo)"></i>Cargo</button>
+  <button class="chip" data-f="tanker"><i style="background:var(--tank)"></i>Tanker</button>
+  <button class="chip" data-f="moving">Underway</button>
+  <button class="chip" data-f="port">In port</button>
+ </div>
+</header>
+<section id="list" aria-label="Ships"><div id="note"></div><div id="rows"></div>
+ <p class="fine">Positions come from coastal AIS receivers. Ships with AIS switched off do not appear, and positions near the strait can be jammed or spoofed. Destination, ETA and draught are typed in by the crew. For awareness only, not navigation.</p>
+</section>
+<article id="sheet" aria-live="polite"></article>
+<nav><button data-v="map" class="">Map</button><button data-v="list" class="on">Ships<small id="count">0</small></button></nav>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const km=(a,b,c,d)=>{const r=Math.PI/180;return Math.hypot((c-a)*r,(d-b)*r*Math.cos((a+c)*r/2))*6371};
+const dur=t=>{const m=Math.round((Date.now()-t)/6e4);return m<1?'<1 min':m<60?m+' min':m<2880?Math.round(m/60)+' h':Math.round(m/1440)+' d'},ago=t=>dur(t)+' ago';
+const flag=c=>c?[...c].map(x=>String.fromCodePoint(127397+x.charCodeAt(0))).join(''):'';
+const cname=(()=>{try{const n=new Intl.DisplayNames(['en'],{type:'region'});return c=>c?n.of(c):''}catch{return c=>c||''}})();
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const etaFmt=e=>{const[md,hm]=e.split(' '),[mo,d]=md.split('-');return`${+d} ${MON[mo-1]} ${hm} UTC`};
+const col=s=>s.type==='tanker'?'var(--tank)':'var(--cargo)';
+let D={meta:{},ships:[]},F='all',Q='',SEL=null,PORT={},map,ready=false,drawn=false,first=true;
+
+const FILT={all:()=>1,cargo:s=>s.type==='cargo',tanker:s=>s.type==='tanker',moving:s=>(s.sog||0)>=1,port:s=>!!s.port};
+const hay=s=>[s.name,s.mmsi,s.imo,s.dest,s.flag,cname(s.flag),s.type,PORT[s.port]?.name,PORT[s.last]?.name].join(' ').toLowerCase();
+const view=()=>D.ships.filter(s=>FILT[F](s)&&(!Q||hay(s).includes(Q)));
+const dest=t=>{const d=String(t||'').toUpperCase().replace(/[^A-Z]/g,'');return d?Object.values(PORT).find(p=>(p.lc&&d.includes(p.lc))||p.k.some(k=>d.includes(k)))||null:null};
+const where=s=>s.port?`${(s.sog||0)<2?'At':'Near'} ${PORT[s.port]?.name||''}`:(s.sog||0)>=1?s.sog.toFixed(1)+' kn':'Stopped';
+
+function row(s){return`<button class="row${s.mmsi===SEL?' sel':''}" data-m="${s.mmsi}"><i class="dot" style="background:${col(s)}"></i><span class="nm">${esc(s.name)}</span><span class="rt">${esc(where(s))}</span><span class="sub"><span>${s.type==='tanker'?'Tanker':'Cargo ship'}</span>${s.flag?`<span>${flag(s.flag)} ${esc(cname(s.flag))}</span>`:''}${s.len?`<span>${s.len} m</span>`:''}</span><span class="ag">${ago(s.ts)}</span>${s.dest?`<span class="dst">to ${esc(s.dest)}</span>`:''}</button>`}
+function empty(){const m=D.meta||{};
+ if(D.ships.length)return`<div class="empty"><b>No ships match</b>Try another name, number or port, or clear the filter.</div>`;
+ if(m.status==='error'||m.status==='no_messages')return`<div class="empty"><b>The collector heard no ships</b>${esc(m.error||'Check that the AISSTREAM_API_KEY secret is set and valid.')}</div>`;
+ if(m.status==='empty')return`<div class="empty"><b>Heard traffic, but no cargo ships or tankers yet</b>Run the collector again in a few minutes.</div>`;
+ return`<div class="empty"><b>No ships yet</b>In GitHub open Actions, choose collect, then Run workflow. Ships appear here when it finishes, about 8 minutes later.</div>`}
+function note(){const m=D.meta||{};$('#note').innerHTML=D.ships.length&&(m.status==='error'||m.status==='no_messages')?`<div class="note"><b>Last collector run failed</b>${esc(m.error||'No messages received.')} Showing the previous data.</div>`:''}
+function stat(){const u=D.meta.updated?Date.parse(D.meta.updated):0,a=u?(Date.now()-u)/6e4:0,k=!u?'':a<=45?'ok':a<=180?'warn':'bad';$('#stat').className='stat '+k;$('#stat b').textContent=u?'Updated '+ago(u).replace(' ago',''):'No data'}
+const fc=v=>({type:'FeatureCollection',features:v.map(s=>({type:'Feature',geometry:{type:'Point',coordinates:[s.lon,s.lat]},properties:{m:s.mmsi,t:s.type,sp:s.sog||0}}))});
+function render(){const v=view();$('#count').textContent=D.ships.length;$('#rows').innerHTML=v.length?v.map(row).join(''):empty();if(ready)map.getSource('ships').setData(fc(v))}
+
+function sheet(s){
+ const lp=PORT[s.last],dp=dest(s.dest);let pct=null;
+ if(lp&&dp&&lp!==dp){const t=km(lp.la,lp.lo,dp.la,dp.lo),d=km(lp.la,lp.lo,s.lat,s.lon);pct=Math.min(94,Math.max(6,d/t*100))}
+ const fromSub=!lp?'No port seen yet':s.port===s.last?'first seen here '+ago(s.arrived):s.left?'left '+ago(s.left):'';
+ const f=(k,v)=>v||v===0?`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`:'';
+ const hz=s.tc%10>=1&&s.tc%10<=4?` It declares hazardous cargo, category ${'ABCD'[s.tc%10-1]}.`:'';
+ const cg=s.type==='tanker'?'Tanker. Usually carries oil, oil products, chemicals or gas.':'Cargo ship. Could be containers, bulk or general cargo.';
+ return`<div class="hd"><div><h2>${esc(s.name)}</h2><p>${s.type==='tanker'?'Tanker':'Cargo ship'}${s.flag?`, ${flag(s.flag)} ${esc(cname(s.flag))}`:''}</p></div><button class="x" aria-label="Close" data-x>&times;</button></div>
+ <div class="pass" style="--tc:${col(s)}"><div><b>${esc(lp?(s.port===s.last?where(s):lp.name):'Unknown')}</b><small>${esc(fromSub)}</small></div><div class="rail">${pct==null?'':`<i style="left:${pct}%"></i>`}</div><div class="r"><b>${esc(s.dest||'Not declared')}</b><small>${s.eta?'ETA '+etaFmt(s.eta):'Declared by crew'}</small></div></div>
+ <dl>${f('Speed',s.sog!=null?s.sog.toFixed(1)+' kn':'')}${f('Course',s.cog!=null?Math.round(s.cog)+'°':'')}${f('Draught',s.draught?s.draught+' m':'')}${f('Length',s.len?s.len+' m':'')}${f('MMSI',s.mmsi)}${f('IMO',s.imo)}${f('Last heard',ago(s.ts))}${f('Position',s.lat.toFixed(3)+', '+s.lon.toFixed(3))}</dl>
+ <p class="cg"><b>Cargo is not broadcast.</b> ${cg}${hz} Destination, ETA and draught are typed in by the crew.</p>`}
+
+function select(m,keep){
+ const s=D.ships.find(x=>x.mmsi===m),sh=$('#sheet');
+ if(!s){close();return}
+ SEL=m;sh.innerHTML=sheet(s);sh.classList.add('open');document.body.classList.remove('v-list');setTab();
+ if(!ready)return;
+ map.setFilter('sel',['==',['get','m'],m]);
+ map.getSource('track').setData({type:'Feature',properties:{t:s.type},geometry:{type:'LineString',coordinates:(s.track||[]).map(p=>[p[1],p[0]]).concat([[s.lon,s.lat]])}});
+ if(!keep)map.flyTo({center:[s.lon,s.lat],zoom:Math.max(map.getZoom(),8.5),essential:true});
+ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel',r.dataset.m===m));
+}
+function close(){SEL=null;$('#sheet').classList.remove('open');if(ready){map.setFilter('sel',['==',['get','m'],'']);map.getSource('track').setData({type:'FeatureCollection',features:[]})}}
+function setTab(){const l=document.body.classList.contains('v-list');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='list')===l))}
+
+function drawPorts(){if(drawn||!ready||!(D.meta.ports||[]).length)return;drawn=true;
+ for(const p of D.meta.ports){const e=document.createElement('div');e.className='pt';e.innerHTML=`<i></i><span>${esc(p.name)}</span>`;new maplibregl.Marker({element:e,anchor:'left'}).setLngLat([p.lo,p.la]).addTo(map)}}
+async function load(){
+ try{const r=await fetch('data/ships.json?'+Date.now());if(r.status===404)D={meta:{status:'none'},ships:[]};else{if(!r.ok)throw 0;D=await r.json()}}catch{D={meta:{status:'error',error:'Could not load data/ships.json'},ships:[]}}
+ PORT=Object.fromEntries((D.meta.ports||[]).map(p=>[p.id,p]));
+ stat();note();render();drawPorts();if(SEL)select(SEL,true);if(first&&D.ships.length){first=false;document.body.classList.remove('v-list');setTab()}
+}
+
+const dark=matchMedia('(prefers-color-scheme:dark)').matches;
+map=new maplibregl.Map({container:'map',center:[57.2,25.3],zoom:5.7,attributionControl:{compact:true},style:{version:8,sources:{base:{type:'raster',tileSize:256,maxzoom:18,attribution:'© OpenStreetMap © CARTO',tiles:['a','b','c','d'].map(s=>`https://${s}.basemaps.cartocdn.com/${dark?'dark_all':'light_all'}/{z}/{x}/{y}@2x.png`)}},layers:[{id:'base',type:'raster',source:'base'}]}});
+map.on('load',()=>{
+ const tc=['match',['get','t'],'tanker',dark?'#f2a640':'#bf6a00',dark?'#4cc6dc':'#0a89a2'];
+ map.addSource('ships',{type:'geojson',data:fc([])});map.addSource('track',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+ map.addLayer({id:'track',type:'line',source:'track',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':tc,'line-width':2.5,'line-opacity':.9}});
+ map.addLayer({id:'sel',type:'circle',source:'ships',filter:['==',['get','m'],''],paint:{'circle-radius':13,'circle-color':'#0000','circle-stroke-width':2.5,'circle-stroke-color':dark?'#e7f0f2':'#0e2530'}});
+ map.addLayer({id:'ships',type:'circle',source:'ships',paint:{'circle-color':tc,'circle-radius':['interpolate',['linear'],['zoom'],5,3.5,10,7.5],'circle-opacity':['case',['>',['get','sp'],.5],1,.55],'circle-stroke-width':1.2,'circle-stroke-color':dark?'#0b1d26':'#f5f8f9'}});
+ map.on('click','ships',e=>select(e.features[0].properties.m));
+ map.on('click',e=>{if(!map.queryRenderedFeatures(e.point,{layers:['ships']}).length)close()});
+ map.on('mouseenter','ships',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','ships',()=>map.getCanvas().style.cursor='');
+ ready=true;render();drawPorts();if(SEL)select(SEL,true);
+});
+map.on('zoom',()=>document.body.classList.toggle('far',map.getZoom()<7));
+
+$('#q').addEventListener('input',e=>{Q=e.target.value.trim().toLowerCase();if(Q)document.body.classList.add('v-list'),setTab();render()});
+$('#chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;F=b.dataset.f;document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c===b));render()});
+$('#rows').addEventListener('click',e=>{const r=e.target.closest('.row');if(r)select(r.dataset.m)});
+$('#sheet').addEventListener('click',e=>{if(e.target.closest('[data-x]'))close()});
+document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.body.classList.toggle('v-list',b.dataset.v==='list');setTab()});
+const hh=()=>document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px');
+addEventListener('resize',hh);hh();document.fonts?.ready.then(hh);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});setInterval(load,3e5);load();
+</script>
+</body>
+</html>
