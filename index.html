@@ -1,489 +1,209 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#cfe0ec">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0e1a26">
+<meta name="theme-color" content="#ffd400">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="MarineEdge">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <title>MarineEdge</title>
-<script>
-/* resolve the theme before first paint so there is no flash */
-(function(){try{var t=localStorage.getItem('me.theme');t=t?JSON.parse(t):'auto';var d=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=d?'dark':'light'}catch(e){}})();
-</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <style>
-/* MarineEdge: iOS-native interface. Tokens first, then map, glass, sheet, content. */
-:root{
-  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Inter","Segoe UI",Roboto,"Helvetica Neue",sans-serif;
-  --blue:#0088FF;--indigo:#6155F5;--orange:#FF8D28;--green:#2FBF55;--red:#FF383C;--amber:#F59E0B;
-  --cargo:var(--indigo);--tank:var(--orange);
-  --ink:#000;--ink2:rgba(60,60,67,.68);--ink3:rgba(60,60,67,.30);
-  --sep:rgba(60,60,67,.13);--fill:rgba(120,120,128,.12);--fill2:rgba(120,120,128,.2);
-  --g1:rgba(255,255,255,.72);--g2:rgba(255,255,255,.58);
-  --rim:rgba(255,255,255,.95);--rim2:rgba(255,255,255,.5);
-  --card:rgba(255,255,255,.66);--solid:#fff;
-  --shadow:0 20px 54px -12px rgba(14,30,54,.36),0 3px 10px rgba(14,30,54,.10);
-  --shadow-s:0 8px 24px -6px rgba(14,30,54,.28),0 1px 4px rgba(14,30,54,.10);
-  --page:#cfe0ec;
-  --ease:cubic-bezier(.32,.72,0,1);
-  --spring:cubic-bezier(.34,1.45,.64,1);
-  color-scheme:light;
-}
-:root[data-theme=dark]{
-  --blue:#2B9BFF;--indigo:#8C93FF;--orange:#FF9A3C;--green:#30D158;--red:#FF4245;--amber:#FFB020;
-  --ink:#fff;--ink2:rgba(235,235,245,.68);--ink3:rgba(235,235,245,.30);
-  --sep:rgba(255,255,255,.11);--fill:rgba(120,120,128,.26);--fill2:rgba(120,120,128,.36);
-  --g1:rgba(44,47,58,.66);--g2:rgba(26,28,36,.60);
-  --rim:rgba(255,255,255,.36);--rim2:rgba(255,255,255,.10);
-  --card:rgba(255,255,255,.075);--solid:#1d2028;
-  --shadow:0 22px 60px -12px rgba(0,0,0,.75),0 3px 12px rgba(0,0,0,.45);
-  --shadow-s:0 10px 28px -6px rgba(0,0,0,.65),0 1px 4px rgba(0,0,0,.45);
-  --page:#0e1a26;
-  color-scheme:dark;
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--page);color:var(--ink);font:400 17px/1.3 var(--font);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overscroll-behavior:none;font-variant-numeric:tabular-nums}
-body{position:fixed;inset:0}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid color-mix(in srgb,var(--blue) 55%,transparent);outline-offset:2px}
-svg{display:block}
-.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-[hidden]{display:none!important}
-
-/* ---------- map ---------- */
-#map{position:fixed;inset:0;background:var(--page);opacity:0;transition:opacity .7s ease}
-#map.ready{opacity:1}
-.vig{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(130% 95% at 50% 40%,transparent 58%,rgba(16,40,72,.13) 100%)}
-:root[data-theme=dark] .vig{background:radial-gradient(130% 95% at 50% 40%,transparent 50%,rgba(0,0,0,.34) 100%)}
-.maplibregl-canvas{outline:none}
-.maplibregl-ctrl-attrib,.maplibregl-ctrl-logo{display:none!important}
-
-/* ---------- glass ---------- */
-.glass{position:relative;background:linear-gradient(180deg,var(--g1),var(--g2));-webkit-backdrop-filter:blur(26px) saturate(190%);backdrop-filter:blur(26px) saturate(190%);box-shadow:var(--shadow-s),inset 0 1px 0 var(--rim),inset 0 0 0 .5px var(--rim2)}
-.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;background:linear-gradient(140deg,rgba(255,255,255,.95),rgba(255,255,255,.06) 36%,rgba(255,255,255,.03) 64%,rgba(255,255,255,.6));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;opacity:.9}
-:root[data-theme=dark] .glass::before{background:linear-gradient(140deg,rgba(255,255,255,.5),rgba(255,255,255,.03) 36%,rgba(255,255,255,.02) 64%,rgba(255,255,255,.26))}
-@media (prefers-reduced-transparency:reduce){.glass{background:var(--solid);-webkit-backdrop-filter:none;backdrop-filter:none}}
-
-/* ---------- HUD ---------- */
-.hud{position:fixed;z-index:30;top:calc(env(safe-area-inset-top) + 10px)}
-.brand{left:12px;height:48px;padding:0 16px 0 9px;border-radius:24px;display:flex;align-items:center;gap:10px;text-align:left;transition:transform .35s var(--spring)}
-.brand:active{transform:scale(.97)}
-.mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#fff;background:linear-gradient(150deg,#46A6FF,#5B4DF2);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 2px 8px rgba(70,80,240,.4)}
-.mark svg{width:16px;height:16px;fill:currentColor}
-.brand b{display:block;font-size:16px;font-weight:700;line-height:1.1}
-.brand small{display:flex;align-items:center;gap:6px;font-size:12px;line-height:1.25;color:var(--ink2);margin-top:1px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--ink3);flex:none}
-.brand.ok .dot{background:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 24%,transparent)}
-.brand.warn .dot{background:var(--amber);box-shadow:0 0 0 3px color-mix(in srgb,var(--amber) 24%,transparent)}
-.brand.bad .dot{background:var(--red);box-shadow:0 0 0 3px color-mix(in srgb,var(--red) 24%,transparent)}
-.brand.spin .dot{animation:pulse 1s ease-in-out infinite}
-@keyframes pulse{50%{transform:scale(1.6);opacity:.5}}
-.ctrls{right:12px;display:flex;flex-direction:column;border-radius:24px}
-.ctrls button{width:48px;height:48px;display:grid;place-items:center;color:var(--ink);position:relative;transition:background .2s}
-.ctrls button:first-child{border-radius:24px 24px 0 0}.ctrls button:last-child{border-radius:0 0 24px 24px}
-.ctrls button+button::before{content:"";position:absolute;left:12px;right:12px;top:0;height:.5px;background:var(--sep)}
-.ctrls button:active{background:var(--fill)}
-.ctrls button.act{color:var(--blue)}
-
-/* ---------- sheet ---------- */
-#sheet{position:fixed;z-index:20;left:8px;right:8px;bottom:calc(var(--sb,8px) + var(--kb,0px));height:var(--sh,600px);border-radius:42px;will-change:transform;touch-action:pan-x}
-body.dragging #sheet{transition:none}
-.page{position:absolute;inset:0;display:flex;flex-direction:column;border-radius:inherit;overflow:hidden;opacity:0;pointer-events:none;transform:scale(.985);transition:opacity .28s ease,transform .5s var(--ease)}
-.page.on{opacity:1;pointer-events:auto;transform:none}
-.ph{flex:none;padding:0 14px 10px}
-.grip{height:22px;display:grid;place-items:center;cursor:grab}
-.grip i{width:38px;height:5px;border-radius:3px;background:var(--ink3)}
-.pb{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:2px 14px calc(env(safe-area-inset-bottom) + 34px);scrollbar-width:none}
-.pb::-webkit-scrollbar{display:none}
-body:not(.d-full) .pb{overflow-y:hidden}
-
-/* search + chips */
-.sr{display:flex;align-items:center;gap:12px}
-.search{flex:1;position:relative}
-.search>svg{position:absolute;left:15px;top:50%;margin-top:-9px;width:18px;height:18px;color:var(--ink2);stroke-width:2.4;pointer-events:none}
-.search input{width:100%;height:48px;border-radius:24px;border:0;outline:0;padding:0 42px 0 44px;background:var(--fill);color:var(--ink);font:inherit;font-size:17px;-webkit-appearance:none;appearance:none;transition:background .2s}
-.search input::placeholder{color:var(--ink2)}
-.search input::-webkit-search-cancel-button{display:none}
-.search input:focus{background:var(--fill2)}
-.clr{position:absolute;right:9px;top:50%;margin-top:-14px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--ink2);opacity:0;pointer-events:none;transition:opacity .2s}
-.clr svg{width:14px;height:14px;stroke-width:2.6}
-.hasq .clr{opacity:1;pointer-events:auto}
-.cancel{font-size:17px;color:var(--blue);padding:0 2px;display:none;white-space:nowrap}
-.searching .cancel{display:block}
-.chips{display:flex;gap:8px;overflow-x:auto;margin:12px -14px 0;padding:0 14px 2px;scrollbar-width:none;touch-action:pan-x}
-.chips::-webkit-scrollbar{display:none}
-.chip{flex:none;height:36px;padding:0 14px;border-radius:18px;background:var(--fill);font-size:15px;font-weight:500;display:flex;align-items:center;gap:7px;transition:background .25s,color .25s,transform .4s var(--spring)}
-.chip em{font-style:normal;font-size:13px;font-weight:600;color:var(--ink2);transition:color .25s}
-.chip.on{background:var(--blue);color:#fff}
-.chip.on em{color:rgba(255,255,255,.78)}
-.chip:active{transform:scale(.94)}
-.chip svg{width:16px;height:16px}
-.chips .vr{flex:none;width:1px;margin:7px 2px;background:var(--sep)}
-
-/* list */
-.lh{display:flex;align-items:center;justify-content:space-between;padding:4px 12px 6px;font-size:13px;font-weight:600;color:var(--ink2)}
-.sortb{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--blue);padding:6px 4px 6px 10px}
-.sortb svg{width:12px;height:12px;stroke-width:2.8}
-.rows{padding:0 0 4px}
-.row{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:13px;align-items:center;width:100%;padding:10px 12px;border-radius:22px;text-align:left;position:relative;transition:background .2s,transform .4s var(--spring)}
-.row+.row::before{content:"";position:absolute;top:0;left:73px;right:12px;height:.5px;background:var(--sep)}
-.row:active{background:var(--fill);transform:scale(.99)}
-.row.sel{background:var(--fill)}
-.row.sel::before,.row.sel+.row::before{opacity:0}
-.tile{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;color:#fff;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 84%,#fff),var(--c));box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 4px 10px -3px color-mix(in srgb,var(--c) 60%,transparent)}
-.tile.still{background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--c);box-shadow:none}
-.tile.port{--c:var(--blue)}
-.tile svg{width:26px;height:26px;fill:currentColor}
-.tile svg.i{fill:none;width:24px;height:24px}
-.nm{display:flex;align-items:center;gap:6px;font-weight:600;font-size:17px;line-height:1.2}
-.nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.nm svg{width:13px;height:13px;flex:none;fill:var(--amber);stroke:none}
-.l2{display:flex;align-items:center;gap:6px;color:var(--ink2);font-size:15px;line-height:1.3;margin-top:1px;white-space:nowrap;overflow:hidden}
-.l2 svg{width:12px;height:12px;flex:none;stroke-width:2.6;opacity:.7}
-.l2 span{overflow:hidden;text-overflow:ellipsis}
-.l2 .dst{color:var(--ink)}
-.rs{display:grid;justify-items:end;gap:2px;font-size:15px;line-height:1.25;white-space:nowrap}
-.rs b{font-weight:600}
-.rs span{font-size:13px;color:var(--ink2)}
-.st-u{color:var(--blue)}.st-p{color:var(--green)}.st-s{color:var(--ink2)}
-.rs span.warn{color:var(--amber);font-weight:600}
-.gh{font-size:13px;font-weight:600;color:var(--ink2);padding:14px 12px 4px}
-.empty{margin:18px 6px;padding:28px 22px;border-radius:24px;background:var(--card);text-align:center;color:var(--ink2);font-size:15px;line-height:1.4}
-.empty b{display:block;color:var(--ink);font-size:17px;font-weight:600;margin-bottom:4px}
-.fine{padding:14px 18px 6px;color:var(--ink2);font-size:13px;line-height:1.45}
-.fine a{color:var(--blue);text-decoration:none}
-.first .row{animation:rise .6s var(--ease) both;animation-delay:calc(var(--i)*45ms)}
-@keyframes rise{from{opacity:0;transform:translateY(14px)}}
-
-/* detail */
-.dh{display:flex;align-items:flex-start;gap:12px;padding:0 2px 0 6px}
-.dt{flex:1;min-width:0}
-.dt h2{font-size:28px;line-height:1.1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dt p{margin-top:3px;color:var(--ink2);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.x{flex:none;width:34px;height:34px;margin-top:2px;border-radius:50%;background:var(--fill);color:var(--ink2);display:grid;place-items:center;transition:transform .35s var(--spring),background .2s}
-.x svg{width:14px;height:14px;stroke-width:2.8}
-.x:active{transform:scale(.88);background:var(--fill2)}
-.pills{display:flex;flex-wrap:wrap;gap:8px;padding:2px 2px 0}
-.pill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:15px;font-size:13px;font-weight:600;background:color-mix(in srgb,var(--c,var(--ink2)) 15%,transparent);color:var(--c,var(--ink2))}
-.pill i{width:7px;height:7px;border-radius:50%;background:currentColor}
-.acts{display:flex;gap:8px;margin:14px 0 4px}
-.act{flex:1;height:46px;border-radius:23px;background:var(--fill);display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:600;transition:transform .4s var(--spring),background .25s,color .25s}
-.act svg{width:18px;height:18px}
-.act:active{transform:scale(.95)}
-.act.on{background:var(--blue);color:#fff}
-.act.on svg{fill:#fff}
-.card{background:var(--card);border-radius:26px;padding:16px;box-shadow:inset 0 0 0 .5px var(--rim2);margin-top:10px}
-.vy{display:grid;grid-template-columns:minmax(0,1fr) minmax(40px,.7fr) minmax(0,1fr);gap:10px;align-items:start}
-.vy .k{font-size:12px;color:var(--ink2)}
-.vy b{display:block;font-size:17px;font-weight:600;margin-top:2px;line-height:1.2;overflow:hidden;text-overflow:ellipsis}
-.vy .s{font-size:13px;color:var(--ink2);margin-top:2px;line-height:1.3}
-.vy .r{text-align:right}
-.rail{position:relative;height:4px;margin-top:25px;border-radius:2px;background:var(--fill2)}
-.rail::before,.rail::after{content:"";position:absolute;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--card-dot,var(--ink3))}
-.rail::before{left:-2px}.rail::after{right:-2px}
-.rail .f{position:absolute;inset:0 auto 0 0;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 35%,transparent),var(--c))}
-.rail i{position:absolute;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:var(--solid);display:grid;place-items:center;color:var(--c);box-shadow:0 3px 10px rgba(0,0,0,.28),0 0 0 .5px var(--sep)}
-.rail i svg{width:15px;height:15px;fill:currentColor;transform:rotate(90deg)}
-.rail.none{background:none;border-top:2px dashed var(--ink3);height:0;border-radius:0}
-.rail.none::before,.rail.none::after{display:none}
-.vf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;padding-top:14px;border-top:.5px solid var(--sep)}
-.vf .k{font-size:12px;color:var(--ink2)}
-.vf b{display:block;font-size:15px;font-weight:600;margin-top:2px;line-height:1.25}
-.vf div:nth-child(2){text-align:center}.vf div:nth-child(3){text-align:right}
-.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.kpi{background:var(--card);border-radius:22px;padding:13px 14px 12px;box-shadow:inset 0 0 0 .5px var(--rim2)}
-.kpi b{display:block;font-size:25px;line-height:1.1;font-weight:600;white-space:nowrap}
-.kpi b small{font-size:14px;color:var(--ink2);font-weight:500;margin-left:3px}
-.kpi span{display:block;font-size:12px;color:var(--ink2);margin-top:3px}
-.grp{background:var(--card);border-radius:24px;margin-top:10px;overflow:hidden;box-shadow:inset 0 0 0 .5px var(--rim2)}
-.kv{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 16px;position:relative;width:100%;text-align:left;font-size:16px}
-.kv+.kv::before{content:"";position:absolute;left:16px;right:0;top:0;height:.5px;background:var(--sep)}
-.kv>span:first-child{color:var(--ink2);flex:none}
-.kv>span:last-child{text-align:right;font-weight:500;min-width:0;overflow-wrap:anywhere}
-button.kv:active{background:var(--fill)}
-.kv svg{width:15px;height:15px;color:var(--ink3);display:inline-block;vertical-align:-2px;margin-left:6px}
-.sh3{font-size:13px;font-weight:600;color:var(--ink2);margin:20px 10px 0}
-.mini{display:flex;flex-direction:column}
-.mini .row{padding:10px 8px;border-radius:0;grid-template-columns:44px minmax(0,1fr) auto}
-.mini .row+.row::before{left:60px;right:8px}
-.mini .tile{width:40px;height:40px;border-radius:13px}
-.mini .tile svg{width:22px;height:22px}
-
-/* port markers + halo (map DOM) */
-.pt{display:flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 7px;border-radius:13px;font:600 12px/1 var(--font);color:var(--ink);background:var(--g1);-webkit-backdrop-filter:blur(12px) saturate(180%);backdrop-filter:blur(12px) saturate(180%);box-shadow:0 2px 8px rgba(14,30,54,.22),inset 0 0 0 .5px var(--rim2);cursor:pointer;white-space:nowrap;transition:transform .35s var(--spring),opacity .3s}
-.pt:active{transform:scale(.94)}
-.pt svg{width:13px;height:13px;color:var(--blue);stroke-width:2.4}
-.pt em{font-style:normal;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--blue);color:#fff;font-size:11px;display:grid;place-items:center}
-body.far .pt span{display:none}
-body.far .pt{padding:0 6px 0 6px}
-body.far .pt em{margin-left:-2px}
-body.noports .pt{display:none}
-.halo{position:relative;width:0;height:0;pointer-events:none}
-.halo::before,.halo::after{content:"";position:absolute;left:-22px;top:-22px;width:44px;height:44px;border-radius:50%;border:2px solid var(--blue);opacity:0;animation:ping 2.4s var(--ease) 3}
-.halo::after{animation-delay:.8s}
-.halo b{position:absolute;left:-24px;top:-24px;width:48px;height:48px;border-radius:50%;border:2px solid var(--blue);background:color-mix(in srgb,var(--blue) 12%,transparent);box-shadow:0 0 0 4px color-mix(in srgb,var(--blue) 18%,transparent)}
-@keyframes ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.4);opacity:0}}
-.vname{position:relative;left:0;top:26px;transform:translateX(-50%);padding:4px 9px;border-radius:10px;font:600 12px/1 var(--font);color:var(--ink);background:var(--g1);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);white-space:nowrap;box-shadow:0 2px 8px rgba(14,30,54,.22)}
-
-/* menu, toast, scrim */
-.scrim{position:fixed;inset:0;z-index:55}
-.menu{position:fixed;z-index:60;min-width:236px;max-width:calc(100vw - 24px);padding:6px;border-radius:26px;opacity:0;transform:scale(.88) translateY(-6px);transform-origin:var(--ox,100%) var(--oy,0);transition:opacity .2s ease,transform .45s var(--spring)}
-.menu.on{opacity:1;transform:none}
-.mi{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:12px 14px;border-radius:18px;font-size:17px;text-align:left}
-.mi:active{background:var(--fill)}
-.mi svg{width:18px;height:18px;color:var(--blue);stroke-width:2.6}
-.mh{font-size:13px;font-weight:600;color:var(--ink2);padding:10px 14px 4px}
-.sw{flex:none;width:51px;height:31px;border-radius:16px;background:var(--fill2);position:relative;transition:background .3s}
-.sw::after{content:"";position:absolute;left:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .4s var(--spring)}
-.sw.on{background:var(--green)}.sw.on::after{transform:translateX(20px)}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);margin:4px 8px 8px;padding:2px;border-radius:14px;background:var(--fill)}
-.seg button{height:32px;border-radius:12px;font-size:14px;font-weight:600;color:var(--ink2);transition:background .25s,color .25s}
-.seg button.on{background:var(--solid);color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.14)}
-.toast{position:fixed;z-index:70;left:50%;top:calc(env(safe-area-inset-top) + 68px);display:flex;align-items:center;gap:8px;height:42px;padding:0 18px 0 14px;border-radius:21px;font-size:15px;font-weight:600;opacity:0;transform:translate(-50%,-14px) scale(.9);pointer-events:none;transition:opacity .25s,transform .5s var(--spring)}
-.toast.on{opacity:1;transform:translate(-50%,0)}
-.toast svg{width:18px;height:18px;color:var(--green);stroke-width:2.8}
-.about{font-size:15px;line-height:1.45;color:var(--ink2)}
-.about p+p{margin-top:8px}
-.about a{color:var(--blue);text-decoration:none}
-
-/* wide screens: docked panel, no detents */
-@media (min-width:900px){
-  #sheet{left:12px;top:12px;bottom:12px;right:auto;width:396px;height:auto;transform:none!important;border-radius:34px}
-  .grip{display:none}
-  .ph{padding-top:16px}
-  .brand{left:424px}
-}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
-
-/* sheet motion + touch rules the JS relies on */
-:root{--sb:max(8px,calc(env(safe-area-inset-bottom) - 8px))}
-#sheet{transition:transform .55s var(--ease)}
-body.dragging #sheet{transition:none}
-body:not(.d-full) .pb{touch-action:none}
-.pill{--c:var(--ink2)}
-
+:root{--bg:#ecece8;--panel:#fff;--ink:#000;--mute:#5d5d58;--rule:#d9d9d3;--sun:#ffd400;--cargo:#2338d6;--tank:#e0202e;--nav:calc(56px + env(safe-area-inset-bottom));--hh:160px;color-scheme:light}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--panel:#161616;--ink:#fff;--mute:#9b9b94;--rule:#2d2d2d;--cargo:#7b8fff;--tank:#ff5a64;color-scheme:dark}}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--ink);font:15px/1.35 'Schibsted Grotesk',system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
+button,#map{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+#map{position:fixed;inset:0}
+.top{position:fixed;left:0;right:0;top:0;z-index:5;display:grid;gap:10px;padding:max(10px,env(safe-area-inset-top)) 12px 12px;background:var(--sun);color:#000;border-bottom:3px solid #000}
+.brand{display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:900;font-size:23px;letter-spacing:-.025em}
+.stat{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
+.stat i{width:10px;height:10px;background:#000}
+.stat.warn i,.stat.bad i{background:var(--tank)}
+.search{display:block}
+.search input{width:100%;height:46px;padding:0 14px;background:#fff;color:#000;border:2px solid #000;border-radius:8px;font:600 16px 'Schibsted Grotesk',system-ui,sans-serif;outline:0;-webkit-appearance:none;appearance:none}
+.search input::placeholder{color:#6b6b66;font-weight:500}
+.chips{display:grid;grid-template-columns:repeat(5,1fr);border:2px solid #000;border-radius:8px;overflow:hidden}
+.chip{padding:9px 2px;font-size:13.5px;font-weight:700;color:#000;border-left:2px solid #000}
+.chip:first-child{border-left:0}
+.chip.on{background:#000;color:var(--sun)}
+#list{position:fixed;left:0;right:0;bottom:0;top:var(--hh);z-index:4;overflow:auto;overscroll-behavior:contain;background:var(--bg);padding-bottom:calc(var(--nav) + 20px);transform:translateY(102%);transition:transform .25s ease}
+body.v-list #list{transform:none}
+.row{display:grid;grid-template-columns:18px 1fr auto;column-gap:12px;row-gap:3px;width:100%;padding:14px 14px 14px 12px;text-align:left;background:var(--panel);border-bottom:1px solid var(--rule)}
+.row:active{background:var(--bg)}
+.row.sel{box-shadow:inset 6px 0 0 var(--sun)}
+.row .dot{grid-row:1/3;align-self:start;margin-top:3px;width:16px;height:18px;clip-path:polygon(50% 0,100% 100%,50% 76%,0 100%)}
+.nm{font-weight:850;font-size:19px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rt{text-align:right;font-weight:700;font-size:14px}
+.sub{display:flex;gap:12px;color:var(--mute);font-size:13.5px;min-width:0}
+.sub span{white-space:nowrap}
+.ag{text-align:right;color:var(--mute);font-size:13px}
+.dst{grid-column:2/4;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.note,.empty{margin:14px;padding:16px;background:var(--panel);border-left:6px solid var(--sun);color:var(--mute);font-size:14px;line-height:1.5}
+.empty b,.note b{display:block;margin-bottom:4px;color:var(--ink);font-size:18px;font-weight:850}
+.note{border-left-color:var(--tank)}
+.fine{padding:4px 16px 16px;color:var(--mute);font-size:12.5px;line-height:1.55;max-width:62ch}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:7;height:var(--nav);padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:1fr 1fr;background:#000;border-top:1px solid #2d2d2d}
+nav button{font-size:15px;font-weight:700;color:#a8a8a0}
+nav button.on{color:var(--sun);box-shadow:inset 0 4px 0 var(--sun)}
+nav small{margin-left:8px;font-size:13px;font-weight:600;opacity:.8}
+#sheet{position:fixed;left:0;right:0;bottom:var(--nav);z-index:6;max-height:42dvh;overflow:auto;padding:16px 16px 20px;background:var(--panel);border-top:4px solid var(--ink);transform:translateY(115%);transition:transform .25s ease}
+#sheet.open{transform:none}
+.hd{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.hd h2{font-weight:900;font-size:36px;line-height:.98;letter-spacing:-.03em}
+.hd p{margin-top:8px;color:var(--mute);font-size:14px}
+.x{flex:none;width:40px;height:40px;border-radius:8px;background:var(--sun);color:#000;font-size:22px;font-weight:700;line-height:1}
+.pass{display:grid;grid-template-columns:1fr 52px 1fr;gap:10px;align-items:start;margin:20px 0 10px;padding:14px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.pass b{display:block;font-size:21px;font-weight:850;line-height:1.05;letter-spacing:-.015em}
+.pass small{display:block;margin-top:5px;color:var(--mute);font-size:12.5px;line-height:1.3}
+.pass .r{text-align:right}
+.rail{position:relative;height:3px;margin-top:10px;background:var(--ink)}
+.rail i{position:absolute;top:-8px;width:16px;height:19px;margin-left:-8px;background:var(--tc);clip-path:polygon(50% 0,100% 100%,50% 76%,0 100%);transform:rotate(90deg)}
+dl{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;margin:4px 0 14px}
+dl>div{padding:10px 0;border-bottom:1px solid var(--rule)}
+dt{color:var(--mute);font-size:12.5px}
+dd{margin-top:1px;font-size:17px;font-weight:700}
+.cg{padding-left:12px;border-left:4px solid var(--sun);color:var(--mute);font-size:13px;line-height:1.5}
+.cg b{color:var(--ink)}
+.pt{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--ink);text-shadow:0 0 3px var(--bg),0 0 3px var(--bg),0 0 3px var(--bg)}
+.pt i{width:7px;height:7px;background:var(--ink)}
+body.far .pt{display:none}
+.maplibregl-ctrl-bottom-right{bottom:var(--nav)}
+@media(min-width:900px){#map{left:400px}.top{right:auto;width:400px}#list{right:auto;width:400px;transform:none;padding-bottom:20px}nav{display:none}#sheet{left:400px;right:auto;width:400px;bottom:0}.maplibregl-ctrl-bottom-right{bottom:0}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
-<body>
+<body class="v-list">
 <div id="map"></div>
-<div class="vig"></div>
-
-<button class="hud brand glass" id="brand" aria-label="Refresh vessel data">
-  <span class="mark"><svg viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2.4c2.7 3.7 4.2 7.6 4.2 12v4.6a2 2 0 0 1-2 2H9.8a2 2 0 0 1-2-2v-4.6c0-4.4 1.5-8.3 4.2-12ZM9.9 15.2h4.2v3H9.9z"/></svg></span>
-  <span><b>MarineEdge</b><small><i class="dot"></i><span id="stat">Loading</span></small></span>
-</button>
-
-<div class="hud ctrls glass">
-  <button id="fit" aria-label="Show all vessels"><svg class="i" viewBox="0 0 24 24"><path d="M4 9V6.5A2.5 2.5 0 0 1 6.5 4H9M15 4h2.5A2.5 2.5 0 0 1 20 6.5V9M20 15v2.5a2.5 2.5 0 0 1-2.5 2.5H15M9 20H6.5A2.5 2.5 0 0 1 4 17.5V15"/><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none"/></svg></button>
-  <button id="lyr" aria-label="Map settings"><svg class="i" viewBox="0 0 24 24"><path d="m12 3.5 9 4.8-9 4.8-9-4.8 9-4.8Z"/><path d="m3 12.4 9 4.8 9-4.8"/><path d="m3 16.6 9 4.8 9-4.8" opacity=".55"/></svg></button>
-  <button id="inf" aria-label="About this data"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg></button>
-</div>
-
-<section id="sheet" class="glass" aria-label="Vessels">
-  <div class="page on" id="pg-list">
-    <div class="ph" id="hdr-list">
-      <div class="grip" id="grip"><i></i></div>
-      <div class="sr" id="sr">
-        <label class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
-          <input id="q" type="search" placeholder="Search vessels, IMO, MMSI, ports" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" aria-label="Search vessels, IMO, MMSI or ports">
-          <button class="clr" id="clr" aria-label="Clear search"><svg class="i" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
-        </label>
-        <button class="cancel" id="cancel">Cancel</button>
-      </div>
-      <div class="chips" id="chips" role="tablist" aria-label="Filter"></div>
-    </div>
-    <div class="pb" id="pb-list"><div id="list"></div></div>
-  </div>
-  <div class="page" id="pg-detail">
-    <div class="ph" id="hdr-detail"><div class="grip"><i></i></div><div class="dh" id="dh"></div></div>
-    <div class="pb" id="pb-detail"><div id="detail"></div></div>
-  </div>
+<header class="top">
+ <div class="brand"><span class="logo">MarineEdge</span><span class="stat" id="stat"><i></i><b>Loading</b></span></div>
+ <label class="search"><input id="q" type="search" placeholder="Search name, IMO, MMSI…" autocomplete="off" autocapitalize="off" enterkeyhint="search" aria-label="Search ships"></label>
+ <div class="chips" id="chips">
+  <button class="chip on" data-f="all">All</button>
+  <button class="chip" data-f="cargo">Cargo</button>
+  <button class="chip" data-f="tanker">Tanker</button>
+  <button class="chip" data-f="moving">Moving</button>
+  <button class="chip" data-f="port">In port</button>
+ </div>
+</header>
+<section id="list" aria-label="Ships"><div id="note"></div><div id="rows"></div>
+ <p class="fine">Positions come from coastal AIS receivers. Ships with AIS switched off do not appear, and positions near the strait can be jammed or spoofed. Destination, ETA and draught are typed in by the crew. For awareness only, not navigation.</p>
 </section>
-<div class="toast glass" id="toast" role="status"></div>
+<article id="sheet" aria-live="polite"></article>
+<nav><button data-v="map" class="">Map</button><button data-v="list" class="on">Ships<small id="count">0</small></button></nav>
 <script>
-'use strict';
-const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],root=document.documentElement,body=document.body;
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const km=(a,b,c,d)=>{const r=Math.PI/180;return Math.hypot((c-a)*r,(d-b)*r*Math.cos((a+c)*r/2))*6371};
-const mins=t=>Math.round((Date.now()-t)/6e4);
-const dur=t=>{const m=mins(t);return m<1?'<1 min':m<60?m+' min':m<2880?Math.round(m/60)+' h':Math.round(m/1440)+' d'},ago=t=>dur(t)+' ago';
+const dur=t=>{const m=Math.round((Date.now()-t)/6e4);return m<1?'<1 min':m<60?m+' min':m<2880?Math.round(m/60)+' h':Math.round(m/1440)+' d'},ago=t=>dur(t)+' ago';
 const flag=c=>c?[...c].map(x=>String.fromCodePoint(127397+x.charCodeAt(0))).join(''):'';
 const cname=(()=>{try{const n=new Intl.DisplayNames(['en'],{type:'region'});return c=>c?n.of(c):''}catch{return c=>c||''}})();
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const etaFmt=e=>{const[md,hm]=e.split(' '),[mo,d]=md.split('-');return`${+d} ${MON[mo-1]}, ${hm} UTC`};
-const title=t=>String(t||'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
-const store={get(k,d){try{const v=localStorage.getItem('me.'+k);return v==null?d:JSON.parse(v)}catch{return d}},set(k,v){try{localStorage.setItem('me.'+k,JSON.stringify(v))}catch{}}};
-const css=n=>getComputedStyle(root).getPropertyValue(n).trim();
-const ARROW='<svg viewBox="0 0 24 24"><path d="M12 3l6.5 17L12 16.5 5.5 20z"/></svg>';
-const SHIP=d=>ARROW.replace('<svg','<svg style="transform:rotate('+(d||0)+'deg)"');
-const DOT='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.5"/></svg>';
-const PIN='<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v14M7.5 11h9M5 15c0 3.5 3 6 7 6s7-2.5 7-6"/></svg>';
-const ARW='<svg class="i" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>';
-const STAR='<svg viewBox="0 0 24 24"><path d="m12 2.8 2.7 5.8 6.3.7-4.7 4.3 1.3 6.2-5.6-3.1-5.6 3.1 1.3-6.2L3 9.3l6.3-.7z"/></svg>';
-const CHK='<svg class="i" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
-const LOC='<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>';
-const EMPTY={type:'FeatureCollection',features:[]};
+const etaFmt=e=>{const[md,hm]=e.split(' '),[mo,d]=md.split('-');return`${+d} ${MON[mo-1]} ${hm} UTC`};
+const col=s=>s.type==='tanker'?'var(--tank)':'var(--cargo)';
+let D={meta:{},ships:[]},F='all',Q='',SEL=null,PORT={},map,ready=false,drawn=false,first=true;
 
-let D={meta:{},ships:[]},PORT={},F='all',Q='',SEL=null,WATCH=store.get('watch',[]),SET={ports:store.get('ports',true),trails:store.get('trails',true)};
-let map=null,ready=false,fitted=false,first=true,halo=null,sh=600,vis=0,stop='mid';
-const portEls={},sheet=$('#sheet'),mq=matchMedia('(min-width:900px)'),sr=$('#sr'),qi=$('#q');
-
-/* ---------- data helpers ---------- */
-const col=s=>s.type==='tanker'?'var(--tank)':'var(--cargo)',ang=s=>s.cog??s.hdg??0;
-const FILT={all:()=>1,tanker:s=>s.type==='tanker',cargo:s=>s.type==='cargo',moving:s=>(s.sog||0)>=1,port:s=>!!s.port,watch:s=>WATCH.includes(s.mmsi)};
-const LAB={all:'All',tanker:'Tankers',cargo:'Cargo',moving:'Underway',port:'In port',watch:'Watching'};
-const hay=s=>[s.name,s.mmsi,s.imo,s.dest,s.flag,cname(s.flag),s.type==='tanker'?'tanker':'cargo ship',PORT[s.port]?.name,PORT[s.last]?.name].join(' ').toLowerCase();
+const FILT={all:()=>1,cargo:s=>s.type==='cargo',tanker:s=>s.type==='tanker',moving:s=>(s.sog||0)>=1,port:s=>!!s.port};
+const hay=s=>[s.name,s.mmsi,s.imo,s.dest,s.flag,cname(s.flag),s.type,PORT[s.port]?.name,PORT[s.last]?.name].join(' ').toLowerCase();
 const view=()=>D.ships.filter(s=>FILT[F](s)&&(!Q||hay(s).includes(Q)));
-const dest=t=>{const d=String(t||'').toUpperCase().replace(/[^A-Z]/g,'');return d?Object.values(PORT).find(p=>(p.lc&&d.includes(p.lc))||(p.k||[]).some(k=>d.includes(k)))||null:null};
-const dn=s=>dest(s.dest)?.name||title(s.dest);
-const stt=s=>{const p=PORT[s.port],v=s.sog||0;return p?{k:'p',t:(v<2?'At ':'Near ')+p.name}:v>=1?{k:'u',t:v.toFixed(1)+' kn'}:{k:'s',t:'Stopped'}};
-const fc=v=>({type:'FeatureCollection',features:v.map(s=>({type:'Feature',geometry:{type:'Point',coordinates:[s.lon,s.lat]},properties:{m:s.mmsi,t:s.type,mv:(s.sog||0)>.5?1:0,c:ang(s)}}))});
-const vec=v=>({type:'FeatureCollection',features:v.filter(s=>(s.sog||0)>=1).map(s=>{const c=ang(s)*Math.PI/180,d=s.sog*1.852;return{type:'Feature',properties:{t:s.type},geometry:{type:'LineString',coordinates:[[s.lon,s.lat],[s.lon+d*Math.sin(c)/(111.32*Math.cos(s.lat*Math.PI/180)),s.lat+d*Math.cos(c)/111.32]]}}})});
-const line=s=>({type:'Feature',properties:{t:s.type},geometry:{type:'LineString',coordinates:(s.track||[]).map(p=>[p[1],p[0]]).concat([[s.lon,s.lat]])}});
-const trl=v=>({type:'FeatureCollection',features:v.filter(s=>(s.track||[]).length>1).map(line)});
+const dest=t=>{const d=String(t||'').toUpperCase().replace(/[^A-Z]/g,'');return d?Object.values(PORT).find(p=>(p.lc&&d.includes(p.lc))||p.k.some(k=>d.includes(k)))||null:null};
+const where=s=>s.port?`${(s.sog||0)<2?'At':'Near'} ${PORT[s.port]?.name||''}`:(s.sog||0)>=1?s.sog.toFixed(1)+' kn':'Stopped';
 
-/* ---------- list ---------- */
-const row=(s,i)=>{const st=stt(s),mv=(s.sog||0)>=1;return`<button class="row${s.mmsi===SEL?' sel':''}" data-m="${s.mmsi}" style="--c:${col(s)};--i:${Math.min(i,12)}"><span class="tile${mv?'':' still'}">${mv?SHIP(ang(s)):DOT}</span><span><span class="nm"><span>${esc(s.name)}</span>${WATCH.includes(s.mmsi)?STAR:''}</span><span class="l2"><span>${s.type==='tanker'?'Tanker':'Cargo ship'}${s.flag?' · '+flag(s.flag)+' '+esc(cname(s.flag)):''}</span></span>${s.dest?`<span class="l2">${ARW}<span class="dst">${esc(dn(s))}</span></span>`:''}</span><span class="rs"><b class="st-${st.k}">${esc(st.t)}</b><span${mins(s.ts)>180?' class="warn"':''}>${ago(s.ts)}</span></span></button>`};
-function empty(){const m=D.meta||{},e=(h,t)=>`<div class="empty"><b>${h}</b>${t}</div>`;
- if(D.ships.length)return e('No vessels match','Try another name, number or port, or clear the filter.');
- if(m.status==='error'||m.status==='no_messages')return e('No data from the collector',esc(m.error||'Check the AISSTREAM_API_KEY secret and the Actions log.'));
- if(m.status==='empty')return e('No cargo ships or tankers yet','The collector heard traffic, but none of these types. It runs again in a few minutes.');
- return e('No data yet','In GitHub open Actions, choose collect, then Run workflow. Ships appear about 8 minutes later.')}
-function render(){const v=view(),L=$('#list');
- $('#chips').innerHTML=Object.keys(LAB).filter(k=>k!=='watch'||WATCH.length).map(k=>`<button class="chip${k===F?' on':''}" role="tab" data-f="${k}">${LAB[k]}<em>${D.ships.filter(FILT[k]).length}</em></button>`).join('');
- L.innerHTML=(v.length?`<div class="lh"><span>${v.length} vessel${v.length>1?'s':''}</span></div><div class="rows">${v.map(row).join('')}</div>`:empty())+'<p class="fine">Positions come from coastal AIS receivers. Ships with AIS switched off do not appear, and positions near the strait can be jammed or spoofed. Destination, ETA and draught are typed in by the crew. For awareness only, not navigation. Map © OpenFreeMap, data © OpenStreetMap contributors.</p>';
- if(first&&D.ships.length){first=false;L.classList.add('first');setTimeout(()=>L.classList.remove('first'),1200)}
+function row(s){return`<button class="row${s.mmsi===SEL?' sel':''}" data-m="${s.mmsi}"><i class="dot" style="background:${col(s)}"></i><span class="nm">${esc(s.name)}</span><span class="rt">${esc(where(s))}</span><span class="sub"><span>${s.type==='tanker'?'Tanker':'Cargo ship'}</span>${s.flag?`<span>${flag(s.flag)} ${esc(cname(s.flag))}</span>`:''}${s.len?`<span>${s.len} m</span>`:''}</span><span class="ag">${ago(s.ts)}</span>${s.dest?`<span class="dst">to ${esc(s.dest)}</span>`:''}</button>`}
+function empty(){const m=D.meta||{};
+ if(D.ships.length)return`<div class="empty"><b>No ships match</b>Try another name, number or port, or clear the filter.</div>`;
+ if(m.status==='error'||m.status==='no_messages')return`<div class="empty"><b>The collector heard no ships</b>${esc(m.error||'Check that the AISSTREAM_API_KEY secret is set and valid.')}</div>`;
+ if(m.status==='empty')return`<div class="empty"><b>Heard traffic, but no cargo ships or tankers yet</b>Run the collector again in a few minutes.</div>`;
+ return`<div class="empty"><b>No ships yet</b>In GitHub open Actions, choose collect, then Run workflow. Ships appear here when it finishes, about 8 minutes later.</div>`}
+function note(){const m=D.meta||{};$('#note').innerHTML=D.ships.length&&(m.status==='error'||m.status==='no_messages')?`<div class="note"><b>Last collector run failed</b>${esc(m.error||'No messages received.')} Showing the previous data.</div>`:''}
+function stat(){const u=D.meta.updated?Date.parse(D.meta.updated):0,a=u?(Date.now()-u)/6e4:0,k=!u?'':a<=45?'ok':a<=180?'warn':'bad';$('#stat').className='stat '+k;$('#stat b').textContent=u?'Updated '+ago(u).replace(' ago',''):'No data'}
+const fc=v=>({type:'FeatureCollection',features:v.map(s=>({type:'Feature',geometry:{type:'Point',coordinates:[s.lon,s.lat]},properties:{m:s.mmsi,t:s.type,sp:s.sog||0,c:s.cog??s.hdg??0}}))});
+function render(){const v=view();$('#count').textContent=D.ships.length;$('#rows').innerHTML=v.length?v.map(row).join(''):empty();if(ready)map.getSource('ships').setData(fc(v))}
+
+function sheet(s){
+ const lp=PORT[s.last],dp=dest(s.dest);let pct=null;
+ if(lp&&dp&&lp!==dp){const t=km(lp.la,lp.lo,dp.la,dp.lo),d=km(lp.la,lp.lo,s.lat,s.lon);pct=Math.min(94,Math.max(6,d/t*100))}
+ const fromSub=!lp?'No port seen yet':s.port===s.last?'first seen here '+ago(s.arrived):s.left?'left '+ago(s.left):'';
+ const f=(k,v)=>v||v===0?`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`:'';
+ const hz=s.tc%10>=1&&s.tc%10<=4?` It declares hazardous cargo, category ${'ABCD'[s.tc%10-1]}.`:'';
+ const cg=s.type==='tanker'?'Tanker. Usually carries oil, oil products, chemicals or gas.':'Cargo ship. Could be containers, bulk or general cargo.';
+ return`<div class="hd"><div><h2>${esc(s.name)}</h2><p>${s.type==='tanker'?'Tanker':'Cargo ship'}${s.flag?`, ${flag(s.flag)} ${esc(cname(s.flag))}`:''}</p></div><button class="x" aria-label="Close" data-x>&times;</button></div>
+ <div class="pass" style="--tc:${col(s)}"><div><b>${esc(lp?(s.port===s.last?where(s):lp.name):'Unknown')}</b><small>${esc(fromSub)}</small></div><div class="rail">${pct==null?'':`<i style="left:${pct}%"></i>`}</div><div class="r"><b>${esc(s.dest||'Not declared')}</b><small>${s.eta?'ETA '+etaFmt(s.eta):'Declared by crew'}</small></div></div>
+ <dl>${f('Speed',s.sog!=null?s.sog.toFixed(1)+' kn':'')}${f('Course',s.cog!=null?Math.round(s.cog)+'°':'')}${f('Draught',s.draught?s.draught+' m':'')}${f('Length',s.len?s.len+' m':'')}${f('MMSI',s.mmsi)}${f('IMO',s.imo)}${f('Last heard',ago(s.ts))}${f('Position',s.lat.toFixed(3)+', '+s.lon.toFixed(3))}</dl>
+ <p class="cg"><b>Cargo is not broadcast.</b> ${cg}${hz} Destination, ETA and draught are typed in by the crew.</p>`}
+
+function select(m,keep){
+ const s=D.ships.find(x=>x.mmsi===m),sh=$('#sheet');
+ if(!s){close();return}
+ SEL=m;sh.innerHTML=sheet(s);sh.classList.add('open');document.body.classList.remove('v-list');setTab();
  if(!ready)return;
- map.getSource('ships').setData(fc(v));map.getSource('vec').setData(vec(v));map.getSource('trails').setData(trl(v));updatePorts()}
-function stat(){const m=D.meta||{},u=m.updated?Date.parse(m.updated):0,a=u?mins(u):0;$('#brand').className='hud brand glass '+(!u?'bad':a<=45?'ok':a<=180?'warn':'bad');$('#stat').textContent=u?'Updated '+ago(u):'No data'}
-function toast(t){const e=$('#toast');e.innerHTML=CHK+esc(t);e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1800)}
+ map.setFilter('sel',['==',['get','m'],m]);
+ map.getSource('track').setData({type:'Feature',properties:{t:s.type},geometry:{type:'LineString',coordinates:(s.track||[]).map(p=>[p[1],p[0]]).concat([[s.lon,s.lat]])}});
+ if(!keep)map.flyTo({center:[s.lon,s.lat],zoom:Math.max(map.getZoom(),8.5),padding:pad(sh.offsetHeight),essential:true});
+ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel',r.dataset.m===m));
+}
+function close(){SEL=null;$('#sheet').classList.remove('open');if(ready){map.setFilter('sel',['==',['get','m'],'']);map.getSource('track').setData({type:'FeatureCollection',features:[]})}}
+function setTab(){const l=document.body.classList.contains('v-list');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='list')===l))}
 
-/* ---------- detail ---------- */
-function detail(s){
- const lp=PORT[s.last],dp=dest(s.dest),st=stt(s),hz=s.tc%10>=1&&s.tc%10<=4,w=WATCH.includes(s.mmsi);let pct=null;
- if(lp&&dp&&lp!==dp){const t=km(lp.la,lp.lo,dp.la,dp.lo),d=km(lp.la,lp.lo,s.lat,s.lon);pct=Math.round(Math.min(94,Math.max(6,d/t*100)))}
- const fromS=!lp?'No port seen yet':s.port===s.last?'Here since '+dur(s.arrived):s.left?'Left '+ago(s.left):'',kv=(k,v)=>v?`<div class="kv"><span>${k}</span><span>${esc(v)}</span></div>`:'',cp=(k,v)=>v?`<button class="kv" data-c="${esc(v)}"><span>${k}</span><span>${esc(v)}</span></button>`:'';
- $('#dh').innerHTML=`<div class="dt"><h2>${esc(s.name)}</h2><p>${s.type==='tanker'?'Tanker':'Cargo ship'}${s.flag?' · '+flag(s.flag)+' '+esc(cname(s.flag)):''}</p></div><button class="x" data-x aria-label="Close"><svg class="i" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button>`;
- $('#detail').innerHTML=`<div class="pills"><span class="pill" style="--c:${col(s)}"><i></i>${s.type==='tanker'?'Tanker':'Cargo ship'}</span><span class="pill" style="--c:var(--${st.k==='u'?'blue':st.k==='p'?'green':'ink2'})"><i></i>${st.k==='u'?'Underway':esc(st.t)}</span>${hz?'<span class="pill" style="--c:var(--amber)"><i></i>Hazardous cargo</span>':''}</div>
-<div class="acts"><button class="act${w?' on':''}" data-w>${STAR}<span>${w?'Watching':'Watch'}</span></button><button class="act" data-l>${LOC}<span>Locate</span></button></div>
-<div class="card" style="--c:${col(s)}"><div class="vy"><div><span class="k">From</span><b>${esc(lp?lp.name:'Unknown')}</b><div class="s">${esc(fromS)}</div></div><div class="rail${pct==null?' none':''}">${pct==null?'':`<span class="f" style="width:${pct}%"></span><i style="left:${pct}%">${ARROW}</i>`}</div><div class="r"><span class="k">To</span><b>${esc(s.dest?dn(s):'Not declared')}</b><div class="s">${s.eta?'ETA '+etaFmt(s.eta):'Declared by crew'}</div></div></div></div>
-<div class="kpis"><div class="kpi"><b>${s.sog!=null?s.sog.toFixed(1):'–'}<small>kn</small></b><span>Speed</span></div><div class="kpi"><b>${s.cog!=null?Math.round(s.cog):'–'}<small>°</small></b><span>Course</span></div><div class="kpi"><b>${s.draught||'–'}<small>m</small></b><span>Draught</span></div></div>
-<div class="grp">${kv('Flag',s.flag?flag(s.flag)+' '+cname(s.flag):'')}${cp('MMSI',s.mmsi)}${cp('IMO',s.imo)}${kv('Size',s.len?s.len+' × '+(s.beam||'?')+' m':'')}${kv('Position',s.lat.toFixed(3)+', '+s.lon.toFixed(3))}${kv('Last heard',ago(s.ts))}</div>
-<p class="about" style="padding:14px 10px 4px"><b>Cargo is not broadcast.</b> ${s.type==='tanker'?'Tankers usually carry oil, oil products, chemicals or gas.':'Cargo ships can carry containers, bulk or general cargo.'}${hz?' This ship declares hazardous cargo, category '+'ABCD'[s.tc%10-1]+'.':''} Destination, ETA and draught are typed in by the crew.</p>`}
-const pg=n=>{$('#pg-list').classList.toggle('on',n==='list');$('#pg-detail').classList.toggle('on',n==='detail')};
-function select(m,keep){const s=D.ships.find(x=>x.mmsi===m);if(!s)return close();SEL=m;detail(s);
- if(!keep){pg('detail');snap('mid')}
- $$('.row').forEach(r=>r.classList.toggle('sel',r.dataset.m===m));
- if(!ready)return;
- map.getSource('track').setData(line(s));
- if(!halo){const e=document.createElement('div');e.className='halo';e.innerHTML='<b></b><span class="vname"></span>';halo=new maplibregl.Marker({element:e,anchor:'center'})}
- halo.getElement().querySelector('.vname').textContent=s.name;halo.setLngLat([s.lon,s.lat]).addTo(map);
- if(!keep)map.easeTo({center:[s.lon,s.lat],zoom:Math.max(map.getZoom(),8.5),padding:pad(),duration:800})}
-function close(){SEL=null;pg('list');snap('mid');$$('.row.sel').forEach(r=>r.classList.remove('sel'));if(ready){map.getSource('track').setData(EMPTY);halo&&halo.remove();map.easeTo({padding:pad(),duration:400})}}
-const recenter=()=>{const s=D.ships.find(x=>x.mmsi===SEL);if(ready&&s)map.easeTo({center:[s.lon,s.lat],padding:pad(),duration:450})};
-function searchFor(t){Q=t.toLowerCase();F='all';qi.value=t;sr.classList.add('hasq');if(SEL)close();render();snap('mid')}
-
-/* ---------- sheet: three detents, drag, spring ---------- */
-const stops=()=>({peek:92,mid:Math.min(sh,Math.max(300,Math.round(innerHeight*.43))),full:sh});
-const pad=()=>mq.matches?{top:80,bottom:40,left:432,right:40}:{top:$('#brand').getBoundingClientRect().bottom+24,bottom:vis+24,left:30,right:70};
-function snap(k){const S=stops();if(!S[k]||(SEL&&k==='peek'))k='mid';stop=k;vis=S[k];sheet.style.transform=mq.matches?'':`translateY(${sh-vis}px)`;body.classList.toggle('d-full',mq.matches||k==='full');if(SEL&&ready)recenter()}
-function layout(){const v=visualViewport,vh=v?v.height:innerHeight;root.style.setProperty('--kb',(v?Math.max(0,innerHeight-vh-v.offsetTop):0)+'px');sh=Math.max(320,Math.min(vh-($('#brand').getBoundingClientRect().bottom+12)-8,780));root.style.setProperty('--sh',sh+'px');snap(stop)}
-let g=null;
-sheet.addEventListener('pointerdown',e=>{if(mq.matches||e.target.closest('input'))return;const h=e.target.closest('.ph'),b=e.target.closest('.pb');if(!h&&!(b&&!body.classList.contains('d-full')))return;g={id:e.pointerId,y0:e.clientY,y:sh-vis,ly:e.clientY,lt:e.timeStamp,vy:0,on:false,cy:sh-vis}});
-sheet.addEventListener('pointermove',e=>{if(!g)return;const dy=e.clientY-g.y0;if(!g.on){if(Math.abs(dy)<6)return;g.on=true;try{sheet.setPointerCapture(g.id)}catch{}body.classList.add('dragging')}
- const dt=e.timeStamp-g.lt;if(dt>0){g.vy=(e.clientY-g.ly)/dt;g.ly=e.clientY;g.lt=e.timeStamp}
- const lo=0,hi=sh-(SEL?stops().mid:stops().peek);let y=g.y+dy;y=y<lo?lo-(lo-y)*.25:y>hi?hi+(y-hi)*.25:y;g.cy=y;sheet.style.transform=`translateY(${y}px)`});
-const endDrag=()=>{if(!g)return;const d=g;g=null;if(!d.on)return;body.classList.remove('dragging');const S=stops(),p=d.cy+d.vy*200;let best='mid',bd=1e9;for(const k in S){if(SEL&&k==='peek')continue;const x=Math.abs(sh-S[k]-p);if(x<bd){bd=x;best=k}}snap(best)};
-sheet.addEventListener('pointerup',endDrag);sheet.addEventListener('pointercancel',endDrag);
-sheet.addEventListener('click',e=>{if(e.target.closest('.grip')&&!mq.matches)snap(stop==='full'?'mid':stop==='peek'?'mid':'full')});
-
-/* ---------- menus ---------- */
-const closeMenu=()=>$$('.scrim,.menu').forEach(x=>x.remove());
-function menu(btn,html,fn,w){closeMenu();const r=btn.getBoundingClientRect(),sc=document.createElement('div'),m=document.createElement('div');sc.className='scrim';m.className='menu glass';m.innerHTML=html;m.style.top=r.top+'px';m.style.right=(innerWidth-r.left+10)+'px';if(w)m.style.width=w;body.append(sc,m);requestAnimationFrame(()=>m.classList.add('on'));sc.onclick=closeMenu;if(fn)m.onclick=fn}
-function applySet(){body.classList.toggle('noports',!SET.ports);if(ready)for(const l of['trails','vec'])map.setLayoutProperty(l,'visibility',SET.trails?'visible':'none')}
-$('#lyr').onclick=e=>{const t=store.get('theme','auto');menu(e.currentTarget,`<div class="mh">Appearance</div><div class="seg">${['auto','light','dark'].map(k=>`<button data-t="${k}"${k===t?' class="on"':''}>${title(k)}</button>`).join('')}</div><div class="mh">Map</div>${[['ports','Ports'],['trails','Trails and heading']].map(([k,n])=>`<button class="mi" data-k="${k}"><span>${n}</span><span class="sw${SET[k]?' on':''}"></span></button>`).join('')}`,ev=>{const b=ev.target.closest('button');if(!b)return;if(b.dataset.t){store.set('theme',b.dataset.t);theme();$$('.seg button').forEach(x=>x.classList.toggle('on',x===b))}else if(b.dataset.k){const k=b.dataset.k;SET[k]=!SET[k];store.set(k,SET[k]);b.querySelector('.sw').classList.toggle('on',SET[k]);applySet()}})};
-$('#inf').onclick=e=>menu(e.currentTarget,'<div class="about" style="padding:12px 14px"><p><b>Where positions come from.</b> Coastal AIS receivers, collected about every 20 minutes. Ships with AIS off do not appear, and positions near the strait can be jammed or spoofed.</p><p>Destination, ETA and draught are typed in by the crew. Cargo is not broadcast. For awareness only, not navigation.</p><p>Map © OpenFreeMap, data © OpenStreetMap contributors. Ship data from AISStream.</p></div>',null,'min(310px,calc(100vw - 24px))');
-
-/* ---------- theme + map ---------- */
-const PAL={light:{land:'#f2f1ec',water:'#cfe0ec',bound:'#b4bfcb',txt:'#6b7684',halo:'#ffffff'},dark:{land:'#18242f',water:'#0d1823',bound:'#3b4c5f',txt:'#8fa0b2',halo:'#0d1823'}};
-const HIDE=/road|bridge|tunnel|rail|aero|airport|poi|building|housenumber|shield|highway|ferry|transit|waterway|park|landcover|landuse|place_(suburb|village|hamlet|other|isolated|neighbo)/i;
-const MINE=new Set(['ships','track','trails','vec']);
-function skin(){const p=PAL[root.dataset.theme]||PAL.light,T=['coalesce',['get','name_en'],['get','name:latin'],['get','name']];
- for(const l of map.getStyle().layers){if(MINE.has(l.source))continue;const id=l.id,P=(k,v)=>map.setPaintProperty(id,k,v);
-  try{if(HIDE.test(id)){map.setLayoutProperty(id,'visibility','none');continue}
-   if(l.type==='background')P('background-color',p.land);
-   else if(l.type==='fill')P('fill-color',/water/i.test(id)?p.water:p.land);
-   else if(l.type==='line')P('line-color',p.bound);
-   else if(l.type==='symbol'&&l.layout&&l.layout['text-field']){map.setLayoutProperty(id,'text-field',T);P('text-color',p.txt);P('text-halo-color',p.halo)}}catch{}}}
-function colors(){const tk=css('--tank'),cg=css('--cargo'),ex=['match',['get','t'],'tanker',tk,cg];
- for(const[n,a]of[['a-',1],['d-',0]])for(const[t,c]of[['cargo',cg],['tanker',tk]]){const cv=document.createElement('canvas');cv.width=cv.height=52;const x=cv.getContext('2d');x.lineWidth=4;x.lineJoin='round';x.strokeStyle='rgba(255,255,255,.95)';x.shadowColor='rgba(0,0,0,.35)';x.shadowBlur=4;x.fillStyle=c;x.beginPath();if(a){x.moveTo(26,4);x.lineTo(42,46);x.lineTo(26,37);x.lineTo(10,46)}else x.arc(26,26,11,0,7);x.closePath();x.stroke();x.fill();const id=n+t;if(map.hasImage(id))map.removeImage(id);map.addImage(id,x.getImageData(0,0,52,52),{pixelRatio:2})}
- for(const l of['trails','track','vec'])map.setPaintProperty(l,'line-color',ex)}
-function theme(){const t=store.get('theme','auto');root.dataset.theme=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';if(ready){skin();colors()}}
-matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',theme);
-
-function ports(){if(!ready||portEls.done||!(D.meta.ports||[]).length)return;portEls.done=1;
- for(const p of D.meta.ports){const e=document.createElement('div');e.className='pt';e.setAttribute('role','button');e.innerHTML=`${PIN}<span>${esc(p.name)}</span><em hidden></em>`;e.onclick=ev=>{ev.stopPropagation();searchFor(p.name)};new maplibregl.Marker({element:e,anchor:'center'}).setLngLat([p.lo,p.la]).addTo(map);portEls[p.id]=e}
- updatePorts()}
-function updatePorts(){for(const p of Object.values(PORT)){const e=portEls[p.id];if(!e)continue;const n=D.ships.filter(s=>s.port===p.id).length,m=e.querySelector('em');m.hidden=!n;m.textContent=n}}
-function fit(force){if(!ready||(fitted&&!force))return;const v=view().filter(s=>s.lat!=null);if(!v.length)return;fitted=true;const b=new maplibregl.LngLatBounds();v.forEach(s=>b.extend([s.lon,s.lat]));map.fitBounds(b,{padding:pad(),maxZoom:8.5,duration:force?800:0})}
-
-if(window.maplibregl){
- map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/positron',center:[56.6,25.6],zoom:5.6,maxZoom:14,attributionControl:{compact:true},dragRotate:false,pitchWithRotate:false});
- map.touchZoomRotate.disableRotation();
- map.on('load',()=>{skin();
-  for(const n of['ships','track','trails','vec'])map.addSource(n,{type:'geojson',data:n==='ships'?fc([]):EMPTY});
-  map.addLayer({id:'trails',type:'line',source:'trails',layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':['interpolate',['linear'],['zoom'],5,1.2,10,2.2],'line-opacity':.5}});
-  map.addLayer({id:'vec',type:'line',source:'vec',layout:{'line-cap':'round'},paint:{'line-width':1.4,'line-dasharray':[1.5,2],'line-opacity':.85}});
-  map.addLayer({id:'track',type:'line',source:'track',layout:{'line-cap':'round','line-join':'round'},paint:{'line-width':3,'line-opacity':.95}});
-  map.addLayer({id:'ships',type:'symbol',source:'ships',layout:{'icon-image':['concat',['case',['==',['get','mv'],1],'a-','d-'],['get','t']],'icon-rotate':['get','c'],'icon-rotation-alignment':'map','icon-allow-overlap':true,'icon-ignore-placement':true,'icon-size':['interpolate',['linear'],['zoom'],5,.9,10,1.5]}});
-  colors();ready=true;applySet();$('#map').classList.add('ready');
-  map.on('click','ships',e=>{e.originalEvent.__hit=1;select(e.features[0].properties.m)});
-  map.on('click',e=>{if(e.originalEvent.__hit)return;SEL?close():stop==='full'&&snap('mid')});
-  map.on('mouseenter','ships',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','ships',()=>map.getCanvas().style.cursor='');
-  map.on('zoom',()=>body.classList.toggle('far',map.getZoom()<7));body.classList.toggle('far',map.getZoom()<7);
-  render();ports();if(SEL)select(SEL,true);fit()})}
-
-/* ---------- events ---------- */
-$('#chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(b){F=b.dataset.f;render()}});
-$('#list').addEventListener('click',e=>{const r=e.target.closest('.row');if(r)select(r.dataset.m)});
-$('#dh').addEventListener('click',e=>{if(e.target.closest('[data-x]'))close()});
-$('#detail').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const s=D.ships.find(x=>x.mmsi===SEL);
- if(b.dataset.w){WATCH=WATCH.includes(SEL)?WATCH.filter(x=>x!==SEL):[...WATCH,SEL];store.set('watch',WATCH);if(!WATCH.length&&F==='watch')F='all';detail(s);render()}
- else if(b.dataset.l&&s&&ready)map.easeTo({center:[s.lon,s.lat],zoom:Math.max(map.getZoom(),9.5),padding:pad(),duration:700});
- else if(b.dataset.c){try{navigator.clipboard.writeText(b.dataset.c).then(()=>toast('Copied'))}catch{}}});
-qi.addEventListener('focus',()=>{sr.classList.add('searching');snap('full')});
-qi.addEventListener('input',()=>{Q=qi.value.trim().toLowerCase();sr.classList.toggle('hasq',!!Q);render()});
-qi.addEventListener('keydown',e=>{if(e.key==='Enter')qi.blur()});
-$('#clr').onclick=()=>{Q='';qi.value='';sr.classList.remove('hasq');render();qi.focus()};
-$('#cancel').onclick=()=>{qi.value='';Q='';qi.blur();sr.classList.remove('searching','hasq');render();snap('mid')};
-$('#fit').onclick=()=>fit(true);
-$('#brand').onclick=()=>load(true);
-addEventListener('keydown',e=>{if(e.key==='Escape'){closeMenu();if(SEL)close()}});
-addEventListener('resize',layout);mq.addEventListener?.('change',layout);visualViewport?.addEventListener('resize',layout);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});setInterval(load,3e5);
-
-/* ---------- live data ---------- */
-async function load(manual){const b=$('#brand');b.classList.add('spin');let n=null;
- try{const r=await fetch('data/ships.json',{cache:'no-store'});n=r.status===404?{meta:{status:'none'},ships:[]}:r.ok?await r.json():null}catch{}
- if(n)D=n;else if(!D.ships.length)D={meta:{status:'error',error:'Could not load data/ships.json'},ships:[]};
+let fitted=false;
+const pad=(b=0)=>matchMedia('(min-width:900px)').matches?{top:40,bottom:40,left:40,right:40}:{top:$('.top').offsetHeight+30,bottom:$('nav').offsetHeight+b+30,left:30,right:30};
+function fit(){if(fitted||!ready||!D.ships.length)return;fitted=true;const b=new maplibregl.LngLatBounds();D.ships.forEach(s=>b.extend([s.lon,s.lat]));map.fitBounds(b,{padding:pad(),maxZoom:8.5,duration:0})}
+function drawPorts(){if(drawn||!ready||!(D.meta.ports||[]).length)return;drawn=true;
+ for(const p of D.meta.ports){const e=document.createElement('div');e.className='pt';e.innerHTML=`<i></i><span>${esc(p.name)}</span>`;new maplibregl.Marker({element:e,anchor:'left'}).setLngLat([p.lo,p.la]).addTo(map)}}
+async function load(){
+ try{const r=await fetch('data/ships.json?'+Date.now());if(r.status===404)D={meta:{status:'none'},ships:[]};else{if(!r.ok)throw 0;D=await r.json()}}catch{D={meta:{status:'error',error:'Could not load data/ships.json'},ships:[]}}
  PORT=Object.fromEntries((D.meta.ports||[]).map(p=>[p.id,p]));
- b.classList.remove('spin');stat();render();ports();if(SEL)select(SEL,true);fit();
- if(manual)toast(n?'Up to date':'Could not refresh')}
+ stat();note();render();drawPorts();if(SEL)select(SEL,true);if(first&&D.ships.length){first=false;document.body.classList.remove('v-list');setTab()}fit();
+}
 
-theme();applySet();layout();load();
-if(!window.maplibregl)toast('Map failed to load. The list still works.');
-if('serviceWorker'in navigator){let had=!!navigator.serviceWorker.controller;navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{});navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had)location.reload();had=true})}
+const dark=matchMedia('(prefers-color-scheme:dark)').matches;
+const cx=document.createElement('canvas').getContext('2d');
+function tint(v){
+ if(Array.isArray(v))return v.map(tint);
+ if(typeof v!=='string'||!/^(#[0-9a-f]{3,8}|(rgb|hsl)a?\()/i.test(v))return v;
+ cx.fillStyle='#000';cx.fillStyle=v;const c=cx.fillStyle;let r,g,b,a=1;
+ if(c[0]==='#')[r,g,b]=[1,3,5].map(i=>parseInt(c.substr(i,2),16));else[r,g,b,a=1]=c.match(/[\d.]+/g).map(Number);
+ r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;let h=0,s=0;
+ if(d){s=d/(1-Math.abs(2*l-1));h=60*(mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4)}
+ return`hsla(${Math.round(h)},${Math.round(s*60)}%,${Math.round((.08+(1-l)*.8)*100)}%,${a})`}
+function night(){for(const L of map.getStyle().layers)for(const k in L.paint||{})if(/color$/.test(k))map.setPaintProperty(L.id,k,tint(L.paint[k]))}
+map=new maplibregl.Map({container:'map',center:[57.2,25.3],zoom:5.7,attributionControl:{compact:true},style:'https://tiles.openfreemap.org/styles/liberty'});
+map.once('style.load',()=>{try{if(dark)night()}catch{}});
+map.on('load',()=>{
+ const CC={cargo:dark?'#7b8fff':'#2338d6',tanker:dark?'#ff5a64':'#e0202e'},tc=['match',['get','t'],'tanker',CC.tanker,CC.cargo];
+ for(const t in CC)for(const a of[1,0]){const c=document.createElement('canvas');c.width=c.height=52;const x=c.getContext('2d');x.lineWidth=4;x.lineJoin='round';x.strokeStyle=dark?'#000':'#fff';x.fillStyle=CC[t];x.beginPath();if(a){x.moveTo(26,3);x.lineTo(43,47);x.lineTo(26,38);x.lineTo(9,47)}else x.arc(26,26,10,0,7);x.closePath();x.stroke();x.fill();map.addImage((a?'a-':'d-')+t,x.getImageData(0,0,52,52),{pixelRatio:2})}
+ map.addSource('ships',{type:'geojson',data:fc([])});map.addSource('track',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+ map.addLayer({id:'track',type:'line',source:'track',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':tc,'line-width':2.5,'line-opacity':.9}});
+ map.addLayer({id:'sel',type:'circle',source:'ships',filter:['==',['get','m'],''],paint:{'circle-radius':18,'circle-color':'#ffd40066','circle-stroke-width':3,'circle-stroke-color':dark?'#fff':'#000'}});
+ map.addLayer({id:'ships',type:'symbol',source:'ships',layout:{'icon-image':['concat',['case',['>',['get','sp'],.5],'a-','d-'],['get','t']],'icon-rotate':['get','c'],'icon-rotation-alignment':'map','icon-allow-overlap':true,'icon-ignore-placement':true,'icon-size':['interpolate',['linear'],['zoom'],5,.75,10,1.15]}});
+ map.on('click','ships',e=>select(e.features[0].properties.m));
+ map.on('click',e=>{if(!map.queryRenderedFeatures(e.point,{layers:['ships']}).length)close()});
+ map.on('mouseenter','ships',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','ships',()=>map.getCanvas().style.cursor='');
+ document.body.classList.toggle('far',map.getZoom()<7);ready=true;render();drawPorts();if(SEL)select(SEL,true);fit();
+});
+map.on('zoom',()=>document.body.classList.toggle('far',map.getZoom()<7));
 
+$('#q').addEventListener('input',e=>{Q=e.target.value.trim().toLowerCase();if(Q)document.body.classList.add('v-list'),setTab();render()});
+$('#chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;F=b.dataset.f;document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c===b));render()});
+$('#rows').addEventListener('click',e=>{const r=e.target.closest('.row');if(r)select(r.dataset.m)});
+$('#sheet').addEventListener('click',e=>{if(e.target.closest('[data-x]'))close()});
+document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.body.classList.toggle('v-list',b.dataset.v==='list');setTab()});
+const hh=()=>document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px');
+addEventListener('resize',hh);hh();document.fonts?.ready.then(hh);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});setInterval(load,3e5);load();
+if('serviceWorker' in navigator){let had=!!navigator.serviceWorker.controller;navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had)location.reload();had=true})}
 </script>
 </body>
 </html>
