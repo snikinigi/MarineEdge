@@ -1,6 +1,6 @@
-const V='me-v1',STATIC=V+'-static',TILES=V+'-tiles',DATA=V+'-data';
+const V='me-v2',STATIC=V+'-static',TILES=V+'-tiles',DATA=V+'-data';
 const SHELL=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png'];
-const CDN=['https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js','https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css','https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&display=swap'];
+const CDN=['https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js','https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css'];
 self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(STATIC);await Promise.allSettled([...SHELL.map(u=>c.add(new Request(u,{cache:'reload'}))),...CDN.map(u=>c.add(u))]);await self.skipWaiting()})()));
 self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(!k.startsWith(V))await caches.delete(k);await self.clients.claim()})()));
 // Network first with a timeout, then the saved copy (app page, ship data, map style).
