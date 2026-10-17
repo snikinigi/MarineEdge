@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import maplibregl, { GeoJSONSource, LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { Port, Ship } from '../types';
@@ -26,6 +26,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const portsDrawnRef = useRef(false);
   const fittedRef = useRef(false);
   const markersRef = useRef<Marker[]>([]);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   // Convert ships to GeoJSON feature collection
   const getShipsGeoJSON = (shipList: Ship[]): GeoJSON.FeatureCollection => ({
@@ -59,6 +60,11 @@ export const MapView: React.FC<MapViewProps> = ({
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+
+    if (typeof (maplibregl as any).supported === 'function' && !(maplibregl as any).supported()) {
+      setMapError('WebGL is not supported in this browser environment.');
+      return;
+    }
 
     const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const cx = document.createElement('canvas').getContext('2d');
@@ -106,15 +112,26 @@ export const MapView: React.FC<MapViewProps> = ({
       }
     };
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      center: [57.2, 25.3],
-      zoom: 5.7,
-      attributionControl: { compact: true },
-      style: 'https://tiles.openfreemap.org/styles/liberty',
-    });
+    let map: MapLibreMap;
+    try {
+      map = new maplibregl.Map({
+        container: containerRef.current,
+        center: [57.2, 25.3],
+        zoom: 5.7,
+        attributionControl: { compact: true },
+        style: 'https://tiles.openfreemap.org/styles/liberty',
+      });
+    } catch (e: any) {
+      console.error('Failed to construct map:', e);
+      setMapError('Failed to initialize MapLibre GL map.');
+      return;
+    }
 
     mapRef.current = map;
+
+    map.on('error', (e) => {
+      console.warn('MapLibre error event:', e);
+    });
 
     map.once('style.load', () => {
       try {
@@ -351,8 +368,6 @@ export const MapView: React.FC<MapViewProps> = ({
     }
 
     // Fly to ship
-    const sheetEl = document.getElementById('sheet');
-    const sheetHeight = sheetEl?.offsetHeight || 0;
     map.flyTo({
       center: [selectedShip.lon, selectedShip.lat],
       zoom: Math.max(map.getZoom(), 8.5),
@@ -361,5 +376,13 @@ export const MapView: React.FC<MapViewProps> = ({
     });
   }, [selectedShip]);
 
-  return <div id="map-container" ref={containerRef} />;
+  return (
+    <div id="map-container" ref={containerRef}>
+      {mapError && (
+        <div style={{ padding: 20, textAlign: 'center', color: '#666' }}>
+          {mapError}
+        </div>
+      )}
+    </div>
+  );
 };
