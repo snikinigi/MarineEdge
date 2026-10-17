@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import maplibregl, { GeoJSONSource, LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import type { GeoJSONSource, LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl';
+import importedMapLibre from 'maplibre-gl';
 import { Port, Ship } from '../types';
 
 interface MapViewProps {
@@ -61,7 +61,10 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
-    if (typeof (maplibregl as any).supported === 'function' && !(maplibregl as any).supported()) {
+    // Use global window.maplibregl from CDN if available, else fall back to importedMapLibre
+    const ml = (window as any).maplibregl || importedMapLibre;
+
+    if (typeof ml?.supported === 'function' && !ml.supported()) {
       setMapError('WebGL is not supported in this browser environment.');
       return;
     }
@@ -114,7 +117,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
     let map: MapLibreMap;
     try {
-      map = new maplibregl.Map({
+      map = new ml.Map({
         container: containerRef.current,
         center: [57.2, 25.3],
         zoom: 5.7,
@@ -123,7 +126,7 @@ export const MapView: React.FC<MapViewProps> = ({
       });
     } catch (e: any) {
       console.error('Failed to construct map:', e);
-      setMapError('Failed to initialize MapLibre GL map.');
+      setMapError('Failed to initialize map.');
       return;
     }
 
@@ -303,7 +306,8 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!readyRef.current || !mapRef.current || fittedRef.current || !allShips.length) return;
     fittedRef.current = true;
-    const b = new LngLatBounds();
+    const ml = (window as any).maplibregl || importedMapLibre;
+    const b = new ml.LngLatBounds();
     allShips.forEach((s) => b.extend([s.lon, s.lat]));
     mapRef.current.fitBounds(b, {
       padding: getPad(),
@@ -317,6 +321,7 @@ export const MapView: React.FC<MapViewProps> = ({
     if (!readyRef.current || !mapRef.current || portsDrawnRef.current || !ports.length) return;
     portsDrawnRef.current = true;
     const map = mapRef.current;
+    const ml = (window as any).maplibregl || importedMapLibre;
 
     // Clear any previous markers
     markersRef.current.forEach((m) => m.remove());
@@ -326,7 +331,7 @@ export const MapView: React.FC<MapViewProps> = ({
       const el = document.createElement('div');
       el.className = 'pt';
       el.innerHTML = `<i></i><span>${p.name}</span>`;
-      const marker = new Marker({ element: el, anchor: 'left' })
+      const marker = new ml.Marker({ element: el, anchor: 'left' })
         .setLngLat([p.lo, p.la])
         .addTo(map);
       markersRef.current.push(marker);
@@ -379,7 +384,7 @@ export const MapView: React.FC<MapViewProps> = ({
   return (
     <div id="map-container" ref={containerRef}>
       {mapError && (
-        <div style={{ padding: 20, textAlign: 'center', color: '#666' }}>
+        <div style={{ padding: 20, textAlign: 'center', color: '#666', marginTop: 180 }}>
           {mapError}
         </div>
       )}

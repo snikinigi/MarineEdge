@@ -6,18 +6,15 @@ import { ShipList } from './components/ShipList';
 import { ShipSheet } from './components/ShipSheet';
 import { FilterType, Port, Ship, ShipData, ViewTab } from './types';
 import { cname } from './utils/formatters';
+import fallbackData from '../data/ships.json';
 
 export const App: React.FC = () => {
-  const [data, setData] = useState<ShipData>({
-    meta: {},
-    ships: [],
-  });
-  const [loading, setLoading] = useState<boolean>(true);
+  const [data, setData] = useState<ShipData>(fallbackData as unknown as ShipData);
+  const [loading, setLoading] = useState<boolean>(false);
   const [query, setQuery] = useState<string>('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [selectedMmsi, setSelectedMmsi] = useState<string | null>(null);
-  const [currentTab, setCurrentTab] = useState<ViewTab>('list');
-  const [hasInitializedView, setHasInitializedView] = useState<boolean>(false);
+  const [currentTab, setCurrentTab] = useState<ViewTab>('map');
 
   const portsMap = useMemo<Record<string, Port>>(() => {
     return Object.fromEntries((data.meta.ports || []).map((p) => [p.id, p]));
@@ -26,33 +23,23 @@ export const App: React.FC = () => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/data/ships.json?${Date.now()}`);
-      if (res.status === 404) {
-        setData({ meta: { status: 'none' }, ships: [] });
-      } else if (res.ok) {
+      let res: Response | null = null;
+      try {
+        res = await fetch(`data/ships.json?${Date.now()}`);
+      } catch {
+        res = await fetch(`/data/ships.json?${Date.now()}`);
+      }
+
+      if (res && res.ok) {
         const json: ShipData = await res.json();
         setData(json);
-        if (!hasInitializedView && json.ships.length > 0) {
-          setHasInitializedView(true);
-          setCurrentTab('map');
-        }
-      } else {
-        throw new Error('Failed to load ship data');
       }
     } catch (err: any) {
-      console.error(err);
-      setData((prev) => ({
-        meta: {
-          ...prev.meta,
-          status: 'error',
-          error: prev.ships.length ? prev.meta.error : 'Could not load data/ships.json',
-        },
-        ships: prev.ships,
-      }));
+      console.warn('Network refresh note:', err);
     } finally {
       setLoading(false);
     }
-  }, [hasInitializedView]);
+  }, []);
 
   useEffect(() => {
     loadData();
