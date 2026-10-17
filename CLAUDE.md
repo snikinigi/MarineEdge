@@ -1,0 +1,5 @@
+- Read docs/BRIEF.md before any task.
+- Vessels are keyed on IMO number, never on name.
+- All thresholds live in config/rules.yaml.
+- API keys only in .env; never commit .env.
+- Every rule and every voyage function gets unit tests.
