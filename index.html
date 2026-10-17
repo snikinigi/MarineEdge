@@ -1,209 +1,27 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#ffd400">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="MarineEdge">
-<meta name="format-detection" content="telephone=no">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" href="icon-192.png">
-<title>MarineEdge</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&display=swap">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
-<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-<style>
-:root{--bg:#ecece8;--panel:#fff;--ink:#000;--mute:#5d5d58;--rule:#d9d9d3;--sun:#ffd400;--cargo:#2338d6;--tank:#e0202e;--nav:calc(56px + env(safe-area-inset-bottom));--hh:160px;color-scheme:light}
-@media(prefers-color-scheme:dark){:root{--bg:#000;--panel:#161616;--ink:#fff;--mute:#9b9b94;--rule:#2d2d2d;--cargo:#7b8fff;--tank:#ff5a64;color-scheme:dark}}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--ink);font:15px/1.35 'Schibsted Grotesk',system-ui,sans-serif;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%;overflow:hidden;overscroll-behavior:none;touch-action:manipulation}
-button,#map{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-#map{position:fixed;inset:0}
-.top{position:fixed;left:0;right:0;top:0;z-index:5;display:grid;gap:10px;padding:max(10px,env(safe-area-inset-top)) 12px 12px;background:var(--sun);color:#000;border-bottom:3px solid #000}
-.brand{display:flex;justify-content:space-between;align-items:center}
-.logo{font-weight:900;font-size:23px;letter-spacing:-.025em}
-.stat{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
-.stat i{width:10px;height:10px;background:#000}
-.stat.warn i,.stat.bad i{background:var(--tank)}
-.search{display:block}
-.search input{width:100%;height:46px;padding:0 14px;background:#fff;color:#000;border:2px solid #000;border-radius:8px;font:600 16px 'Schibsted Grotesk',system-ui,sans-serif;outline:0;-webkit-appearance:none;appearance:none}
-.search input::placeholder{color:#6b6b66;font-weight:500}
-.chips{display:grid;grid-template-columns:repeat(5,1fr);border:2px solid #000;border-radius:8px;overflow:hidden}
-.chip{padding:9px 2px;font-size:13.5px;font-weight:700;color:#000;border-left:2px solid #000}
-.chip:first-child{border-left:0}
-.chip.on{background:#000;color:var(--sun)}
-#list{position:fixed;left:0;right:0;bottom:0;top:var(--hh);z-index:4;overflow:auto;overscroll-behavior:contain;background:var(--bg);padding-bottom:calc(var(--nav) + 20px);transform:translateY(102%);transition:transform .25s ease}
-body.v-list #list{transform:none}
-.row{display:grid;grid-template-columns:18px 1fr auto;column-gap:12px;row-gap:3px;width:100%;padding:14px 14px 14px 12px;text-align:left;background:var(--panel);border-bottom:1px solid var(--rule)}
-.row:active{background:var(--bg)}
-.row.sel{box-shadow:inset 6px 0 0 var(--sun)}
-.row .dot{grid-row:1/3;align-self:start;margin-top:3px;width:16px;height:18px;clip-path:polygon(50% 0,100% 100%,50% 76%,0 100%)}
-.nm{font-weight:850;font-size:19px;line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.rt{text-align:right;font-weight:700;font-size:14px}
-.sub{display:flex;gap:12px;color:var(--mute);font-size:13.5px;min-width:0}
-.sub span{white-space:nowrap}
-.ag{text-align:right;color:var(--mute);font-size:13px}
-.dst{grid-column:2/4;font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.note,.empty{margin:14px;padding:16px;background:var(--panel);border-left:6px solid var(--sun);color:var(--mute);font-size:14px;line-height:1.5}
-.empty b,.note b{display:block;margin-bottom:4px;color:var(--ink);font-size:18px;font-weight:850}
-.note{border-left-color:var(--tank)}
-.fine{padding:4px 16px 16px;color:var(--mute);font-size:12.5px;line-height:1.55;max-width:62ch}
-nav{position:fixed;left:0;right:0;bottom:0;z-index:7;height:var(--nav);padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:1fr 1fr;background:#000;border-top:1px solid #2d2d2d}
-nav button{font-size:15px;font-weight:700;color:#a8a8a0}
-nav button.on{color:var(--sun);box-shadow:inset 0 4px 0 var(--sun)}
-nav small{margin-left:8px;font-size:13px;font-weight:600;opacity:.8}
-#sheet{position:fixed;left:0;right:0;bottom:var(--nav);z-index:6;max-height:42dvh;overflow:auto;padding:16px 16px 20px;background:var(--panel);border-top:4px solid var(--ink);transform:translateY(115%);transition:transform .25s ease}
-#sheet.open{transform:none}
-.hd{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.hd h2{font-weight:900;font-size:36px;line-height:.98;letter-spacing:-.03em}
-.hd p{margin-top:8px;color:var(--mute);font-size:14px}
-.x{flex:none;width:40px;height:40px;border-radius:8px;background:var(--sun);color:#000;font-size:22px;font-weight:700;line-height:1}
-.pass{display:grid;grid-template-columns:1fr 52px 1fr;gap:10px;align-items:start;margin:20px 0 10px;padding:14px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
-.pass b{display:block;font-size:21px;font-weight:850;line-height:1.05;letter-spacing:-.015em}
-.pass small{display:block;margin-top:5px;color:var(--mute);font-size:12.5px;line-height:1.3}
-.pass .r{text-align:right}
-.rail{position:relative;height:3px;margin-top:10px;background:var(--ink)}
-.rail i{position:absolute;top:-8px;width:16px;height:19px;margin-left:-8px;background:var(--tc);clip-path:polygon(50% 0,100% 100%,50% 76%,0 100%);transform:rotate(90deg)}
-dl{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;margin:4px 0 14px}
-dl>div{padding:10px 0;border-bottom:1px solid var(--rule)}
-dt{color:var(--mute);font-size:12.5px}
-dd{margin-top:1px;font-size:17px;font-weight:700}
-.cg{padding-left:12px;border-left:4px solid var(--sun);color:var(--mute);font-size:13px;line-height:1.5}
-.cg b{color:var(--ink)}
-.pt{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--ink);text-shadow:0 0 3px var(--bg),0 0 3px var(--bg),0 0 3px var(--bg)}
-.pt i{width:7px;height:7px;background:var(--ink)}
-body.far .pt{display:none}
-.maplibregl-ctrl-bottom-right{bottom:var(--nav)}
-@media(min-width:900px){#map{left:400px}.top{right:auto;width:400px}#list{right:auto;width:400px;transform:none;padding-bottom:20px}nav{display:none}#sheet{left:400px;right:auto;width:400px;bottom:0}.maplibregl-ctrl-bottom-right{bottom:0}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffd400">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="MarineEdge">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="description" content="Cargo ships and tankers around the Strait of Hormuz - Real-time AIS vessel tracker">
+  <meta property="og:title" content="MarineEdge">
+  <meta property="og:description" content="Cargo ships and tankers around the Strait of Hormuz - Real-time AIS vessel tracker">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <link rel="icon" href="/icon-192.png">
+  <title>MarineEdge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&display=swap">
 </head>
-<body class="v-list">
-<div id="map"></div>
-<header class="top">
- <div class="brand"><span class="logo">MarineEdge</span><span class="stat" id="stat"><i></i><b>Loading</b></span></div>
- <label class="search"><input id="q" type="search" placeholder="Search name, IMO, MMSI…" autocomplete="off" autocapitalize="off" enterkeyhint="search" aria-label="Search ships"></label>
- <div class="chips" id="chips">
-  <button class="chip on" data-f="all">All</button>
-  <button class="chip" data-f="cargo">Cargo</button>
-  <button class="chip" data-f="tanker">Tanker</button>
-  <button class="chip" data-f="moving">Moving</button>
-  <button class="chip" data-f="port">In port</button>
- </div>
-</header>
-<section id="list" aria-label="Ships"><div id="note"></div><div id="rows"></div>
- <p class="fine">Positions come from coastal AIS receivers. Ships with AIS switched off do not appear, and positions near the strait can be jammed or spoofed. Destination, ETA and draught are typed in by the crew. For awareness only, not navigation.</p>
-</section>
-<article id="sheet" aria-live="polite"></article>
-<nav><button data-v="map" class="">Map</button><button data-v="list" class="on">Ships<small id="count">0</small></button></nav>
-<script>
-const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const km=(a,b,c,d)=>{const r=Math.PI/180;return Math.hypot((c-a)*r,(d-b)*r*Math.cos((a+c)*r/2))*6371};
-const dur=t=>{const m=Math.round((Date.now()-t)/6e4);return m<1?'<1 min':m<60?m+' min':m<2880?Math.round(m/60)+' h':Math.round(m/1440)+' d'},ago=t=>dur(t)+' ago';
-const flag=c=>c?[...c].map(x=>String.fromCodePoint(127397+x.charCodeAt(0))).join(''):'';
-const cname=(()=>{try{const n=new Intl.DisplayNames(['en'],{type:'region'});return c=>c?n.of(c):''}catch{return c=>c||''}})();
-const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const etaFmt=e=>{const[md,hm]=e.split(' '),[mo,d]=md.split('-');return`${+d} ${MON[mo-1]} ${hm} UTC`};
-const col=s=>s.type==='tanker'?'var(--tank)':'var(--cargo)';
-let D={meta:{},ships:[]},F='all',Q='',SEL=null,PORT={},map,ready=false,drawn=false,first=true;
-
-const FILT={all:()=>1,cargo:s=>s.type==='cargo',tanker:s=>s.type==='tanker',moving:s=>(s.sog||0)>=1,port:s=>!!s.port};
-const hay=s=>[s.name,s.mmsi,s.imo,s.dest,s.flag,cname(s.flag),s.type,PORT[s.port]?.name,PORT[s.last]?.name].join(' ').toLowerCase();
-const view=()=>D.ships.filter(s=>FILT[F](s)&&(!Q||hay(s).includes(Q)));
-const dest=t=>{const d=String(t||'').toUpperCase().replace(/[^A-Z]/g,'');return d?Object.values(PORT).find(p=>(p.lc&&d.includes(p.lc))||p.k.some(k=>d.includes(k)))||null:null};
-const where=s=>s.port?`${(s.sog||0)<2?'At':'Near'} ${PORT[s.port]?.name||''}`:(s.sog||0)>=1?s.sog.toFixed(1)+' kn':'Stopped';
-
-function row(s){return`<button class="row${s.mmsi===SEL?' sel':''}" data-m="${s.mmsi}"><i class="dot" style="background:${col(s)}"></i><span class="nm">${esc(s.name)}</span><span class="rt">${esc(where(s))}</span><span class="sub"><span>${s.type==='tanker'?'Tanker':'Cargo ship'}</span>${s.flag?`<span>${flag(s.flag)} ${esc(cname(s.flag))}</span>`:''}${s.len?`<span>${s.len} m</span>`:''}</span><span class="ag">${ago(s.ts)}</span>${s.dest?`<span class="dst">to ${esc(s.dest)}</span>`:''}</button>`}
-function empty(){const m=D.meta||{};
- if(D.ships.length)return`<div class="empty"><b>No ships match</b>Try another name, number or port, or clear the filter.</div>`;
- if(m.status==='error'||m.status==='no_messages')return`<div class="empty"><b>The collector heard no ships</b>${esc(m.error||'Check that the AISSTREAM_API_KEY secret is set and valid.')}</div>`;
- if(m.status==='empty')return`<div class="empty"><b>Heard traffic, but no cargo ships or tankers yet</b>Run the collector again in a few minutes.</div>`;
- return`<div class="empty"><b>No ships yet</b>In GitHub open Actions, choose collect, then Run workflow. Ships appear here when it finishes, about 8 minutes later.</div>`}
-function note(){const m=D.meta||{};$('#note').innerHTML=D.ships.length&&(m.status==='error'||m.status==='no_messages')?`<div class="note"><b>Last collector run failed</b>${esc(m.error||'No messages received.')} Showing the previous data.</div>`:''}
-function stat(){const u=D.meta.updated?Date.parse(D.meta.updated):0,a=u?(Date.now()-u)/6e4:0,k=!u?'':a<=45?'ok':a<=180?'warn':'bad';$('#stat').className='stat '+k;$('#stat b').textContent=u?'Updated '+ago(u).replace(' ago',''):'No data'}
-const fc=v=>({type:'FeatureCollection',features:v.map(s=>({type:'Feature',geometry:{type:'Point',coordinates:[s.lon,s.lat]},properties:{m:s.mmsi,t:s.type,sp:s.sog||0,c:s.cog??s.hdg??0}}))});
-function render(){const v=view();$('#count').textContent=D.ships.length;$('#rows').innerHTML=v.length?v.map(row).join(''):empty();if(ready)map.getSource('ships').setData(fc(v))}
-
-function sheet(s){
- const lp=PORT[s.last],dp=dest(s.dest);let pct=null;
- if(lp&&dp&&lp!==dp){const t=km(lp.la,lp.lo,dp.la,dp.lo),d=km(lp.la,lp.lo,s.lat,s.lon);pct=Math.min(94,Math.max(6,d/t*100))}
- const fromSub=!lp?'No port seen yet':s.port===s.last?'first seen here '+ago(s.arrived):s.left?'left '+ago(s.left):'';
- const f=(k,v)=>v||v===0?`<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`:'';
- const hz=s.tc%10>=1&&s.tc%10<=4?` It declares hazardous cargo, category ${'ABCD'[s.tc%10-1]}.`:'';
- const cg=s.type==='tanker'?'Tanker. Usually carries oil, oil products, chemicals or gas.':'Cargo ship. Could be containers, bulk or general cargo.';
- return`<div class="hd"><div><h2>${esc(s.name)}</h2><p>${s.type==='tanker'?'Tanker':'Cargo ship'}${s.flag?`, ${flag(s.flag)} ${esc(cname(s.flag))}`:''}</p></div><button class="x" aria-label="Close" data-x>&times;</button></div>
- <div class="pass" style="--tc:${col(s)}"><div><b>${esc(lp?(s.port===s.last?where(s):lp.name):'Unknown')}</b><small>${esc(fromSub)}</small></div><div class="rail">${pct==null?'':`<i style="left:${pct}%"></i>`}</div><div class="r"><b>${esc(s.dest||'Not declared')}</b><small>${s.eta?'ETA '+etaFmt(s.eta):'Declared by crew'}</small></div></div>
- <dl>${f('Speed',s.sog!=null?s.sog.toFixed(1)+' kn':'')}${f('Course',s.cog!=null?Math.round(s.cog)+'°':'')}${f('Draught',s.draught?s.draught+' m':'')}${f('Length',s.len?s.len+' m':'')}${f('MMSI',s.mmsi)}${f('IMO',s.imo)}${f('Last heard',ago(s.ts))}${f('Position',s.lat.toFixed(3)+', '+s.lon.toFixed(3))}</dl>
- <p class="cg"><b>Cargo is not broadcast.</b> ${cg}${hz} Destination, ETA and draught are typed in by the crew.</p>`}
-
-function select(m,keep){
- const s=D.ships.find(x=>x.mmsi===m),sh=$('#sheet');
- if(!s){close();return}
- SEL=m;sh.innerHTML=sheet(s);sh.classList.add('open');document.body.classList.remove('v-list');setTab();
- if(!ready)return;
- map.setFilter('sel',['==',['get','m'],m]);
- map.getSource('track').setData({type:'Feature',properties:{t:s.type},geometry:{type:'LineString',coordinates:(s.track||[]).map(p=>[p[1],p[0]]).concat([[s.lon,s.lat]])}});
- if(!keep)map.flyTo({center:[s.lon,s.lat],zoom:Math.max(map.getZoom(),8.5),padding:pad(sh.offsetHeight),essential:true});
- document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel',r.dataset.m===m));
-}
-function close(){SEL=null;$('#sheet').classList.remove('open');if(ready){map.setFilter('sel',['==',['get','m'],'']);map.getSource('track').setData({type:'FeatureCollection',features:[]})}}
-function setTab(){const l=document.body.classList.contains('v-list');document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',(b.dataset.v==='list')===l))}
-
-let fitted=false;
-const pad=(b=0)=>matchMedia('(min-width:900px)').matches?{top:40,bottom:40,left:40,right:40}:{top:$('.top').offsetHeight+30,bottom:$('nav').offsetHeight+b+30,left:30,right:30};
-function fit(){if(fitted||!ready||!D.ships.length)return;fitted=true;const b=new maplibregl.LngLatBounds();D.ships.forEach(s=>b.extend([s.lon,s.lat]));map.fitBounds(b,{padding:pad(),maxZoom:8.5,duration:0})}
-function drawPorts(){if(drawn||!ready||!(D.meta.ports||[]).length)return;drawn=true;
- for(const p of D.meta.ports){const e=document.createElement('div');e.className='pt';e.innerHTML=`<i></i><span>${esc(p.name)}</span>`;new maplibregl.Marker({element:e,anchor:'left'}).setLngLat([p.lo,p.la]).addTo(map)}}
-async function load(){
- try{const r=await fetch('data/ships.json?'+Date.now());if(r.status===404)D={meta:{status:'none'},ships:[]};else{if(!r.ok)throw 0;D=await r.json()}}catch{D={meta:{status:'error',error:'Could not load data/ships.json'},ships:[]}}
- PORT=Object.fromEntries((D.meta.ports||[]).map(p=>[p.id,p]));
- stat();note();render();drawPorts();if(SEL)select(SEL,true);if(first&&D.ships.length){first=false;document.body.classList.remove('v-list');setTab()}fit();
-}
-
-const dark=matchMedia('(prefers-color-scheme:dark)').matches;
-const cx=document.createElement('canvas').getContext('2d');
-function tint(v){
- if(Array.isArray(v))return v.map(tint);
- if(typeof v!=='string'||!/^(#[0-9a-f]{3,8}|(rgb|hsl)a?\()/i.test(v))return v;
- cx.fillStyle='#000';cx.fillStyle=v;const c=cx.fillStyle;let r,g,b,a=1;
- if(c[0]==='#')[r,g,b]=[1,3,5].map(i=>parseInt(c.substr(i,2),16));else[r,g,b,a=1]=c.match(/[\d.]+/g).map(Number);
- r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;let h=0,s=0;
- if(d){s=d/(1-Math.abs(2*l-1));h=60*(mx===r?((g-b)/d+6)%6:mx===g?(b-r)/d+2:(r-g)/d+4)}
- return`hsla(${Math.round(h)},${Math.round(s*60)}%,${Math.round((.08+(1-l)*.8)*100)}%,${a})`}
-function night(){for(const L of map.getStyle().layers)for(const k in L.paint||{})if(/color$/.test(k))map.setPaintProperty(L.id,k,tint(L.paint[k]))}
-map=new maplibregl.Map({container:'map',center:[57.2,25.3],zoom:5.7,attributionControl:{compact:true},style:'https://tiles.openfreemap.org/styles/liberty'});
-map.once('style.load',()=>{try{if(dark)night()}catch{}});
-map.on('load',()=>{
- const CC={cargo:dark?'#7b8fff':'#2338d6',tanker:dark?'#ff5a64':'#e0202e'},tc=['match',['get','t'],'tanker',CC.tanker,CC.cargo];
- for(const t in CC)for(const a of[1,0]){const c=document.createElement('canvas');c.width=c.height=52;const x=c.getContext('2d');x.lineWidth=4;x.lineJoin='round';x.strokeStyle=dark?'#000':'#fff';x.fillStyle=CC[t];x.beginPath();if(a){x.moveTo(26,3);x.lineTo(43,47);x.lineTo(26,38);x.lineTo(9,47)}else x.arc(26,26,10,0,7);x.closePath();x.stroke();x.fill();map.addImage((a?'a-':'d-')+t,x.getImageData(0,0,52,52),{pixelRatio:2})}
- map.addSource('ships',{type:'geojson',data:fc([])});map.addSource('track',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
- map.addLayer({id:'track',type:'line',source:'track',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':tc,'line-width':2.5,'line-opacity':.9}});
- map.addLayer({id:'sel',type:'circle',source:'ships',filter:['==',['get','m'],''],paint:{'circle-radius':18,'circle-color':'#ffd40066','circle-stroke-width':3,'circle-stroke-color':dark?'#fff':'#000'}});
- map.addLayer({id:'ships',type:'symbol',source:'ships',layout:{'icon-image':['concat',['case',['>',['get','sp'],.5],'a-','d-'],['get','t']],'icon-rotate':['get','c'],'icon-rotation-alignment':'map','icon-allow-overlap':true,'icon-ignore-placement':true,'icon-size':['interpolate',['linear'],['zoom'],5,.75,10,1.15]}});
- map.on('click','ships',e=>select(e.features[0].properties.m));
- map.on('click',e=>{if(!map.queryRenderedFeatures(e.point,{layers:['ships']}).length)close()});
- map.on('mouseenter','ships',()=>map.getCanvas().style.cursor='pointer');map.on('mouseleave','ships',()=>map.getCanvas().style.cursor='');
- document.body.classList.toggle('far',map.getZoom()<7);ready=true;render();drawPorts();if(SEL)select(SEL,true);fit();
-});
-map.on('zoom',()=>document.body.classList.toggle('far',map.getZoom()<7));
-
-$('#q').addEventListener('input',e=>{Q=e.target.value.trim().toLowerCase();if(Q)document.body.classList.add('v-list'),setTab();render()});
-$('#chips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;F=b.dataset.f;document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c===b));render()});
-$('#rows').addEventListener('click',e=>{const r=e.target.closest('.row');if(r)select(r.dataset.m)});
-$('#sheet').addEventListener('click',e=>{if(e.target.closest('[data-x]'))close()});
-document.querySelector('nav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;document.body.classList.toggle('v-list',b.dataset.v==='list');setTab()});
-const hh=()=>document.documentElement.style.setProperty('--hh',$('.top').offsetHeight+'px');
-addEventListener('resize',hh);hh();document.fonts?.ready.then(hh);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)load()});setInterval(load,3e5);load();
-if('serviceWorker' in navigator){let had=!!navigator.serviceWorker.controller;navigator.serviceWorker.register('sw.js',{updateViaCache:'none'});navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had)location.reload();had=true})}
-</script>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
