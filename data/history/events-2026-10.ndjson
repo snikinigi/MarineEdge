@@ -31,3 +31,5 @@
 {"ts":1792315455642,"m":"352002917","e":"arr","p":"dubai","note":"first_seen"}
 {"ts":1792315663317,"m":"620800157","e":"arr","p":"dubai","note":"first_seen"}
 {"ts":1792322824803,"m":"538007326","e":"arr","p":"dubai","note":"first_seen"}
+{"ts":1792324102651,"m":"352002917","e":"dep","p":"dubai","note":"approx"}
+{"ts":1792324102651,"m":"352002917","e":"arr","p":"sharjah"}
