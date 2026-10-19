@@ -36,11 +36,11 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 - Task 2 — Tidy leftovers: done and confirmed by the owner
 
-- Task 3 — Save the brief and the project rules: the three files are in the latest zip; owner to confirm they are committed to main
+- Task 3 — Save the brief and the project rules: done; the owner confirmed BRIEF.md, TASKS.md, PLAN.md and CLAUDE.md are on main (19 Oct 2026)
 
 - Task 4 — Plan before code: done; the owner approved docs/PLAN.md on 19 Oct 2026
 
-- Task 5 — Scaffold the project: next; waiting for the owner's approval to start. The free server (needed for Task 7) is being arranged by the owner
+- Task 5 — Scaffold the project: approved and built on 19 Oct 2026; waiting for the owner's check (backend-tests run is green, deploy is green, live site loads). The free server (needed for Task 7) is being arranged by the owner
 
 - Tasks 6–21: on hold
 

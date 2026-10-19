@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.DS_Store
+# Reports, notes and database dumps stay private (docs/PLAN.md, section 4). Root-level only.
+/reports/
+*.dump
