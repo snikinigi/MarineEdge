@@ -32,7 +32,7 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 **Status board** (edit as you go)
 
-- Task 1 — Fix the white screen: files are in the latest zip; owner to confirm the live site loads
+- Task 1 — Fix the white screen: done and confirmed by the owner (the live site loads)
 
 - Task 2 — Tidy leftovers: done and confirmed by the owner
 
