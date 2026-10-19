@@ -1,0 +1,35 @@
+# One-time helper for Task 5, for people working from a phone. It unpacks task5-files.zip
+# (uploaded to the repo root) into the repo, then deletes the zip. Run it once from the
+# Actions tab, then delete this file. Only the paths listed below are copied in.
+name: unpack-task5
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Unpack and commit
+        run: |
+          set -euo pipefail
+          test -f task5-files.zip || { echo "task5-files.zip is not in the repo root"; exit 1; }
+          rm -rf /tmp/t5 && mkdir /tmp/t5
+          unzip -q task5-files.zip -d /tmp/t5
+          for p in backend frontend docker-compose.yml .env.example .gitignore README.md docs/TASKS.md; do
+            test -e "/tmp/t5/$p" || { echo "missing in the zip: $p"; exit 1; }
+            mkdir -p "$(dirname "$p")"
+            cp -a "/tmp/t5/$p" "$(dirname "$p")/"
+          done
+          git rm -q task5-files.zip
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add backend frontend docker-compose.yml .env.example .gitignore README.md docs/TASKS.md
+          git commit -m "Task 5: scaffold backend, frontend and docker-compose"
+          for i in 1 2 3; do git pull --rebase -q origin main && git push origin HEAD:main && exit 0; sleep 5; done
+          exit 1
