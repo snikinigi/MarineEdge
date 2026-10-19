@@ -39,3 +39,5 @@
 {"ts":1792357698250,"m":"352001544","e":"arr","p":"jebel-ali","note":"first_seen"}
 {"ts":1792359021515,"m":"620999322","e":"arr","p":"dubai","note":"first_seen"}
 {"ts":1792364802273,"m":"538009650","e":"arr","p":"jebel-ali","note":"first_seen"}
+{"ts":1792370302258,"m":"620800366","e":"dep","p":"dubai","note":"approx"}
+{"ts":1792370302258,"m":"620800366","e":"arr","p":"sharjah"}
