@@ -32,4 +32,4 @@ node --test        # unit tests for the voyage logic
 
 ## Status
 
-Planned work is tracked in the task list (`docs/TASKS.md` once added). The product brief is `docs/BRIEF.md`.
+Planned work is tracked in the task list, `docs/TASKS.md`. The product brief is `docs/BRIEF.md`. The sample report that shows the target layout is `docs/Sample_Vessel_Voyage_Report.pdf` (fictional ship, invented data).
