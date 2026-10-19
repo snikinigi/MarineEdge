@@ -1,6 +1,6 @@
 # MarineEdge — Task List
 
-*Updated 17 Oct 2026 · Do one task at a time, in order. Nothing starts until the owner approves it.*
+*Updated 19 Oct 2026 · Do one task at a time, in order. Nothing starts until the owner approves it.*
 
 ## Start here
 
@@ -24,6 +24,8 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 - Use only real broadcasts. If something is not known, show it as unknown; never guess.
 
+- Free data sources only. No paid data, no paid trials, no keys bought. Check each source's licence before using it (Task 6).
+
 - After each task: tests pass, the owner reads the diff, the work is committed.
 
 **Privacy note.** The brief asks for an internal tool, but the GitHub Pages site is public to anyone with the link. Until Task 21 settles hosting, keep due-diligence notes, flags and any paid-provider data out of the public repo and site, and check each provider’s licence before showing its data publicly.
@@ -34,13 +36,23 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 - Task 2 — Tidy leftovers: done and confirmed by the owner
 
-- Tasks 3–21: on hold
+- Task 3 — Save the brief and the project rules: the three files are in the latest zip; owner to confirm they are committed to main
+
+- Tasks 4–21: on hold
+
+- Tasks 22, 23, 24 (added 19 Oct 2026): written, on hold
+
+- Task 25 (coverage map): approved by the owner on 19 Oct 2026; it starts only when its turn comes, before Task 14
+
+- Order of work: 1–9, 22, 23, 10–13, 25, 14–16, 24, 17–21. The tasks appear in this order below; the numbers stay as they are so older references still work.
 
 ## The project
 
 **Today.** MarineEdge is a live map of cargo ships and tankers around the Strait of Hormuz, Persian Gulf and Gulf of Oman, hosted on GitHub Pages at https://snikinigi.github.io/MarineEdge/. It is not yet the due-diligence tool in the brief.
 
 **Goal (from the brief).** An internal tool: type a vessel name, IMO or MMSI and see every voyage of that ship over the last 12 months on a map, port to port, with suspicious behaviour flagged and a one-click PDF report. It is used for vessel due diligence before fixing a ship or accepting a cargo (grains, oilseeds, vegetable oils, dry bulk). Out of scope for now: fleet-wide alerts, our own AIS receivers, a mobile app and selling the tool; build it so a later product version is not blocked.
+
+**Decisions since the brief (19 Oct 2026).** Free data sources only, so there is no paid 12-month history: a report covers the period we have recorded (it started on 16 Oct 2026 and grows daily) and its header says "Recorded since [date]". The listening area stays between Oman, Iran and the UAE. Only ships we have recorded can have a report. The free live feed comes from receivers on land, so some stretches of sea have no coverage (Task 25). The sample report (docs/Sample_Vessel_Voyage_Report.pdf, fictional ship and invented data) is the layout target only. Equasis is not used. Global Fishing Watch: no permission requested, internal use only. Anchorage waiting merges into the port call it precedes, as in the brief.
 
 **How the current code works** (checked by reading the latest zip)
 
@@ -58,9 +70,9 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 1.  Hide the AIS provider behind one adapter interface so it can be swapped without touching the rest of the app.
 
-2.  Cache every position we pay for in our own database; never pay twice for the same history.
+2.  Keep every position we record in our own database; never fetch the same history twice. (Free data only: nothing is paid for.)
 
-3.  Confirm each provider’s licence allows storing the data and showing it in our tool, and get current pricing directly from the vendors.
+3.  Confirm each source's licence allows storing the data and showing it in our tool. (Free sources only; see Task 6.)
 
 4.  Do not scrape the MarineTraffic or VesselFinder websites.
 
@@ -134,7 +146,7 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 **Goal:** a written plan the owner approves before any rebuild.
 
-**Do:** read docs/BRIEF.md and write docs/PLAN.md with the folder structure, the database schema (vessels, identity history, positions, port calls, voyages, flags) and the API endpoints for the MVP. Say what to keep from today’s code (the UI shell, and the voyages.mjs logic and tests as reference) and what to replace (MMSI keying, the 19 rough port circles, the 72-hour window). Say how the public site keeps running until the new version replaces it. Do not write code.
+**Do:** read docs/BRIEF.md and write docs/PLAN.md with the folder structure, the database schema (vessels, identity history, positions, port calls, voyages, flags) and the API endpoints for the MVP. Say what to keep from today’s code (the UI shell, and the voyages.mjs logic and tests as reference) and what to replace (MMSI keying, the 19 rough port circles, the 72-hour window). Plan for the recorded period, not 12 months, and for free data sources only. Say how the public site keeps running until the new version replaces it. Do not write code.
 
 **Done when:** the owner approves the plan. If rejected, correct it and ask again.
 
@@ -150,31 +162,41 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 **Done when:** one command starts everything, the health check answers, and the existing app still builds.
 
-### Task 6: Trial two AIS providers
+### Task 6: Confirm free sources and licences
 
-**Needs the owner:** trial API keys for two paid global AIS providers. Candidates in the brief: Kpler / MarineTraffic API, Kpler / Spire Maritime, Datalastic, VesselFinder API. aisstream.io is free but live only, so it is for testing and live top-ups. Keys go in .env only.
+**Goal:** know exactly which free sources we use and what each licence allows, before any code depends on them.
 
-**Do:** for each provider, fetch 12 months of history for 3 vessels and note coverage gaps and cost per vessel. Confirm the licence allows storing the data and showing it in our tool. Get current pricing from the vendors. Do not scrape websites. Write the result in docs/PROVIDERS.md.
+**Do:** write docs/SOURCES.md with one row per source (AISStream, the sanctions lists, the World Port Index, Natural Earth, and any other free source): what it gives, that it is free, and what its licence allows, with a short quote and the link. Check that storing the data and showing it in our tool is allowed. No keys are bought and no trials are started. Do not scrape websites. Record the owner's decisions: Equasis not used; Global Fishing Watch: no permission requested, internal use only, attribution shown if it is ever used.
 
-**Done when:** the owner has picked a provider and the brief’s questions are answered: which provider, the monthly cost at the owner’s volume, and whether the licence allows storing and showing positions.
+**Findings so far** (19 Oct 2026; check each vendor page before relying on it):
+
+- AISStream: free, live only, no history; coverage follows volunteer receivers on land. Its licence on storing and showing the data has not been read yet.
+
+- Global Fishing Watch: free for non-commercial and research use, attribution required; gives events, not raw positions. Internal business use may still count as commercial under its terms.
+
+- Equasis: free with registration; its notices forbid robots and storing its data without written permission. Not used.
+
+- OFAC, EU and UK sanctions lists, World Port Index, Natural Earth: free official downloads.
+
+**Done when:** the owner has marked each source "use" or "do not use", and every "use" source has a licence line in docs/SOURCES.md.
 
 ### Task 7: Data provider adapter
 
-**Goal:** swap provider without touching the rest of the app.
+**Goal:** swap the data source without touching the rest of the app.
 
-**Do:** an interface with search_vessel(query), get_track(imo, start, end) and get_vessels_near(lat, lon, radius, start, end). A MockProvider that reads sample tracks from tests/fixtures. The chosen real provider using the key in .env. Cache every fetched position in PostGIS and fetch only periods not already held.
+**Do:** an interface with search_vessel(query), get_track(imo, start, end) and get_vessels_near(lat, lon, radius, start, end). A MockProvider that reads sample tracks from tests/fixtures. The real provider is AISStream (key in .env) plus our own stored positions. Keep every recorded position in PostGIS.
 
-**Done when:** a test proves that a second request for the same period makes no provider call.
+**Done when:** a test proves that a report is built from stored positions and makes no network call.
 
 ### Task 8: Vessel search and IMO keying
 
-**Do:** add GET /vessels/search?q= that accepts a name, IMO or MMSI and returns candidates with name, IMO, flag, type and size. The UI lets the owner pick one ship, because names can match several. Re-key vessels on IMO and store name, flag and MMSI history per IMO.
+**Do:** add GET /vessels/search?q= that accepts a name, IMO or MMSI and returns candidates with name, IMO, flag, type and size. Search finds only ships we have recorded; for any other it says "not recorded by us yet". The UI lets the owner pick one ship, because names can match several. Re-key vessels on IMO and store name, flag and MMSI history per IMO.
 
 **Done when:** the owner can search, pick a ship and see its history, and tests cover a name clash and a renamed ship.
 
 ## Part C: Milestone 2, Voyage map (brief steps 5–6)
 
-**Demo for the owner:** 12 months of a real vessel shows as separate coloured voyages with correct ports and dates.
+**Demo for the owner:** the recorded period of a real vessel shows as separate coloured voyages with correct ports and dates.
 
 ### Task 9: Ports and the config file
 
@@ -182,15 +204,42 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 **Done when:** ports load into the database and thresholds are read from the file, not hard-coded.
 
+### Task 22: Vessel particulars (do after Task 9)
+
+**Goal:** the report header shows what we really know about the ship and says "not recorded" for the rest.
+
+**Do:**
+- Show what AIS broadcasts and we already store: name, IMO, MMSI, flag, ship type, length and beam.
+- Deadweight, year built and size class (for example Supramax) are not broadcast, and the owner has decided not to use Equasis or hand-typed figures. Show all three as "not recorded". Keep the fields in the report layout so a later source can fill them without a redesign.
+- Flag, MMSI and name history: show "was X until [date]" only when our own records saw the change. Never fill in earlier history.
+
+**Files:** a new particulars module and its tests. No config file.
+
+**Done when:** a ship shows the broadcast fields, the three missing fields read "not recorded", and tests cover that plus a flag or MMSI change that we recorded.
+
+### Task 23: Places at sea (do after Task 9)
+
+**Goal:** describe any position the way the sample does: "22 nm SW of the Kerch Strait".
+
+**Do:**
+- Write one function, describePosition(lat, lon), that returns the nearest named place, the distance in nautical miles and an eight-point compass direction.
+- Names come from the World Port Index ports (Task 9) plus an owner-editable list, config/places.yaml, of straits, capes and islands.
+- If the nearest place is farther than a limit kept in config/rules.yaml, say "open sea, X nm from [place]".
+- Country wording ("off Russia") comes from the nearest place. How disputed areas are worded is the owner's decision.
+
+**Files:** new places module, config/places.yaml, config/rules.yaml, tests.
+
+**Done when:** tests pass for each of the eight directions, a short distance, a very long distance, and two places at nearly the same distance.
+
 ### Task 10: Port calls and voyage splitting
 
-**Do:** detect port calls and split voyages exactly as in the brief: a voyage runs from one port call to the next. Today’s voyages.mjs is a reference only, because it uses MMSI and rough port circles. Write unit tests on synthetic tracks: a normal two-port voyage, a long anchorage wait, and a voyage with a gap.
+**Do:** detect port calls and split voyages exactly as in the brief: a voyage runs from one port call to the next. Today’s voyages.mjs is a reference only, because it uses MMSI and rough port circles. Write unit tests on synthetic tracks: a normal two-port voyage, a long anchorage wait, and a voyage with a gap. Anchorage waiting belongs to the port call it precedes: the port-call row says "waited at [anchorage] for N days" and gets no row of its own. An anchorage wait that is not followed by a port call stays as its own row. Add a test for each case.
 
 **Done when:** all tests pass.
 
 ### Task 11: The map screen
 
-**Do:** build the main screen from the brief’s first mock-up: search bar on top, map on the left, voyage list on the right, newest first. One colour per voyage. The current voyage is dashed and ends at the ship’s live position. Port calls are dots with names, AIS gaps are dotted red segments. Clicking a voyage in the list highlights it on the map and opens its detail. Today’s MapView.tsx is the starting point.
+**Do:** build the main screen from the brief’s first mock-up: search bar on top, map on the left, voyage list on the right, newest first. One colour per voyage. The current voyage is dashed and ends at the ship’s live position. Port calls are dots with names, AIS gaps are dotted red segments. Clicking a voyage in the list highlights it on the map and opens its detail. Today’s MapView.tsx is the starting point. The map caption shows "Recorded since [date]".
 
 **Done when:** the owner can run the milestone demo above.
 
@@ -208,9 +257,17 @@ Every flag stores its evidence: the rule that fired, severity, start and end tim
 
 **Do:** Sanctions hit (High): the IMO is on an OFAC, EU or UK list now or was in the past 12 months. Call at a sensitive port (High): a port call or anchorage inside a listed zone.
 
+### Task 25: Coverage map (approved 19 Oct 2026; do before Task 14)
+
+**Goal:** tell "the ship switched AIS off" from "we had no receiver there".
+
+**Do:** build a coarse grid from our own recorded positions that marks where we regularly hear ships. In Task 14, raise an AIS gap at the normal severity only when both ends of the gap are in a covered cell. Otherwise show it as "no coverage, not flagged". The report prints the coverage level for each gap (the sample's "in an area with good coverage"). Thresholds go in config/rules.yaml.
+
+**Done when:** tests on synthetic tracks show a gap in a covered area flagged and the same gap in an uncovered area not flagged.
+
 ### Task 14: AIS gap and position jump
 
-**Do:** AIS gap (Medium): no position for more than 6 hours at sea; raise to High if over 24 hours or within 100 nm of a sensitive zone. Position jump (Medium): implied speed between two fixes above 30 knots; label it “possible GPS jamming” inside the known jamming areas.
+**Do:** AIS gap (Medium): no position for more than 6 hours at sea; raise to High if over 24 hours or within 100 nm of a sensitive zone. Position jump (Medium): implied speed between two fixes above 30 knots; label it “possible GPS jamming” inside the known jamming areas. Do not raise a gap as "AIS off" where Task 25 shows we had no coverage.
 
 ### Task 15: Draught change and identity change
 
@@ -218,7 +275,23 @@ Every flag stores its evidence: the rule that fired, severity, start and end tim
 
 ### Task 16: Possible ship-to-ship transfer
 
-**Do:** High: another vessel within 500 m, both under 1 knot, for 2 hours or more, outside port limits. This needs the positions of other ships, which costs more API calls, so the owner decides after Task 6 whether it is in the MVP or moves to phase 2.
+**Do:** High: another vessel within 500 m, both under 1 knot, for 2 hours or more, outside port limits. This needs the positions of other ships. With free data there is no per-call cost, but it only works where we hear both ships, so the owner decides, once Task 25 shows where we have coverage, whether it is in the MVP or moves to phase 2.
+
+### Task 24: Report numbers and summary text (do after Task 16, before Task 17)
+
+**Goal:** the numbers at the top of the report, the "time by country" table and the summary paragraph, all computed from our records.
+
+**Do:**
+- Compute: port calls, countries called at, days in port, at anchor or stopped, days sailing, number and total hours of AIS-off periods, and number of High and Medium flags.
+- Time by country: anchorage waiting is part of the port call it precedes, so it counts for that port's country. Shipyard days count for the country; stops at sea do not (as in the sample).
+- Report the recorded period and any unrecorded time separately, so the totals add up to the recorded period.
+- Summary: fixed sentence templates filled from those numbers (route pattern, most serious flag, current status). No interpretive wording such as "consistent with loading at an undeclared location" unless the owner approves that exact sentence. Always include the sentence that cargo is not broadcast.
+- Report ID in the form VVR-YYYY-NNNN and a generated time in UTC.
+- Save the sample report as a test fixture (tests/fixtures) and check that our code gives its totals: 21 port calls, 6 countries, and the country table (Egypt 6 calls 81.8 days, Turkey 3 calls 53.3, Russia 5 calls 45.8, Romania 5 calls 38.6, Lebanon 1 call 9.6, Libya 1 call 9.6). Merging anchorage rows into port calls does not change these totals.
+
+**Files:** new report-summary module, tests, tests/fixtures.
+
+**Done when:** all tests pass, including the sample-fixture test.
 
 ### Task 17: Voyage detail and flag panel
 
@@ -230,7 +303,7 @@ Every flag stores its evidence: the rule that fired, severity, start and end tim
 
 ### Task 18: PDF report
 
-**Do:** add an “Export report” button that produces a PDF with the vessel identity, the map, the voyage table and all flags with evidence, using Playwright to print the report page.
+**Do:** add an “Export report” button that produces a PDF with the vessel identity, the map, the voyage table and all flags with evidence, using Playwright to print the report page. The report header and map caption show "Recorded since [date]".
 
 ### Task 19: Full review
 
@@ -238,7 +311,7 @@ Every flag stores its evidence: the rule that fired, severity, start and end tim
 
 ### Task 20: Real-vessel tests
 
-**Needs the owner:** 5–10 real vessels, including at least one known case with AIS gaps.
+**Needs the owner:** 5–10 real vessels, including at least one known case with AIS gaps. Use ships we have already recorded; if no known AIS-gap case exists in our data yet, say so instead of forcing one.
 
 **Done when:** every rule behaves correctly on them and the owner has seen the results.
 
@@ -248,10 +321,28 @@ Every flag stores its evidence: the rule that fired, severity, start and end tim
 
 **Done when:** the tool runs on the server, a backup has been restored once as a test, and all tests pass.
 
-## Decisions only the owner can make
+## Decisions
 
-- Which AIS provider to use and what monthly cost is acceptable (Task 6).
+**Made (19 Oct 2026)**
+
+- Free data sources only; no paid 12-month history.
+
+- Listening area stays between Oman, Iran and the UAE; collect.mjs does not change.
+
+- Task 25 (coverage map) approved.
+
+- Global Fishing Watch: no permission requested, because the tool is internal only. No task needs it yet.
+
+- Equasis not used; deadweight, year built and size class show "not recorded".
+
+- Anchorage waiting merges into the port call it precedes, as in the brief.
+
+**Still open**
+
+- Where the internal tool is hosted, since the Pages site is public (Task 21).
 
 - Whether ship-to-ship detection is in the MVP or phase 2 (Task 16).
 
-- Where the internal tool is hosted, since the Pages site is public (Task 21).
+- Thresholds for "stop at sea" (sample: 46 h) and "shipyard stay" (sample: 29 days), and whether those two stop types are built at all.
+
+- How disputed places are worded in reports (Task 23).
