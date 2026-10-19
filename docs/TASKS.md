@@ -38,7 +38,11 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 - Task 3 — Save the brief and the project rules: the three files are in the latest zip; owner to confirm they are committed to main
 
-- Tasks 4–21: on hold
+- Task 4 — Plan before code: done; the owner approved docs/PLAN.md on 19 Oct 2026
+
+- Task 5 — Scaffold the project: next; waiting for the owner's approval to start. The free server (needed for Task 7) is being arranged by the owner
+
+- Tasks 6–21: on hold
 
 - Tasks 22, 23, 24 (added 19 Oct 2026): written, on hold
 
@@ -158,9 +162,9 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 **Goal:** a runnable project from the approved plan.
 
-**Do:** a FastAPI backend; a React + TypeScript frontend with MapLibre (move today’s UI shell in rather than starting over); docker-compose with PostgreSQL + PostGIS; a health-check endpoint; a README with run instructions.
+**Do:** a FastAPI backend; a React + TypeScript frontend with MapLibre (copy today’s UI shell into frontend/ rather than starting over; leave the root app and its deploy untouched so the public site keeps working); docker-compose with PostgreSQL + PostGIS; a health-check endpoint; a README with run instructions.
 
-**Done when:** one command starts everything, the health check answers, and the existing app still builds.
+**Done when:** one command starts everything, the health check answers, the existing app still builds, the deploy still goes green and the live site still loads.
 
 ### Task 6: Confirm free sources and licences
 
@@ -184,9 +188,11 @@ Give the AI tool this document and the repo (or the latest zip), then paste:
 
 **Goal:** swap the data source without touching the rest of the app.
 
-**Do:** an interface with search_vessel(query), get_track(imo, start, end) and get_vessels_near(lat, lon, radius, start, end). A MockProvider that reads sample tracks from tests/fixtures. The real provider is AISStream (key in .env) plus our own stored positions. Keep every recorded position in PostGIS.
+**Do:** an interface with search_vessel(query), get_track(imo, start, end) and get_vessels_near(lat, lon, radius, start, end). A MockProvider that reads sample tracks from tests/fixtures. The real provider is AISStream (key in .env) plus our own stored positions. Keep every recorded position in PostGIS. Also build the recorder (a worker that listens to AISStream continuously and saves positions and ship-details messages at most one position per ship per 5 minutes while moving and one per 30 minutes while stopped, plus every change in draught or identity; see docs/PLAN.md, decision 4) and a one-off import of the Git history in data/history, marked low detail.
 
-**Done when:** a test proves that a report is built from stored positions and makes no network call.
+**Needs the owner first:** the free always-on server for the recorder, set up and reachable by the owner, with Docker installed (docs/PLAN.md, decision 1). Task 7 does not start until it exists. Server logins and keys are never pasted into prompts or committed.
+
+**Done when:** a test proves that a report is built from stored positions and makes no network call, and the recorder has saved live positions from AISStream into the database.
 
 ### Task 8: Vessel search and IMO keying
 
@@ -337,9 +343,19 @@ Every flag stores its evidence: the rule that fired, severity, start and end tim
 
 - Anchorage waiting merges into the port call it precedes, as in the brief.
 
+- Plan approved (docs/PLAN.md). Task 5 copies the UI shell instead of moving it; Task 7 includes the recorder and the one-off import of the Git history.
+
+- The recorder runs on a free always-on server that the owner provides. GitHub Actions keeps recording as a backup meanwhile.
+
+- Stored position detail: at most one per ship per 5 minutes while moving and one per 30 minutes while stopped, plus every change in draught or identity.
+
+- The internal tool is local only until Task 21; then a simple shared login or a private network.
+
 **Still open**
 
-- Where the internal tool is hosted, since the Pages site is public (Task 21).
+- Which free server, and when it is ready (needed before Task 7).
+
+- Where the internal tool is hosted, since the Pages site is public (Task 21); it may be the same server as the recorder. Also whether the public live map is kept or retired after cutover.
 
 - Whether ship-to-ship detection is in the MVP or phase 2 (Task 16).
 
